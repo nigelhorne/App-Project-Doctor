@@ -1,0 +1,174 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use autodie qw(:all);
+
+use Getopt::Long qw(:config no_auto_abbrev bundling);
+use Carp qw(croak);
+use Pod::Usage qw(pod2usage);
+
+our $VERSION = '0.01';
+
+# ---------------------------------------------------------------------------
+# Parse CLI arguments
+# ---------------------------------------------------------------------------
+
+my %opts = (
+	format => 'text',
+	fix    => undef,        # undef = ask interactively; 1 = auto-apply; 0 = never
+);
+
+GetOptions(
+	'check=s'   => \$opts{check},
+	'skip=s'    => \$opts{skip},
+	'fix!'      => \$opts{fix},
+	'format=s'  => \$opts{format},
+	'verbose|v' => \$opts{verbose},
+	'quiet|q'   => \$opts{quiet},
+	'help|h'    => sub { pod2usage(-verbose => 1, -exitval => 0) },
+	'man'       => sub { pod2usage(-verbose => 2, -exitval => 0) },
+) or pod2usage(-verbose => 0, -exitval => 2);
+
+my $path = shift @ARGV // '.';
+
+unless ($opts{format} =~ /^(?:text|json|tap)$/) {
+	die "Unknown --format '$opts{format}'. Valid: text, json, tap\n";
+}
+
+# ---------------------------------------------------------------------------
+# Build and run Doctor
+# ---------------------------------------------------------------------------
+
+require App::Project::Doctor;
+require App::Project::Doctor::Fixer;
+
+my %doctor_args = (path => $path);
+$doctor_args{checks}  = [split /\s*,\s*/, $opts{check}] if defined $opts{check};
+$doctor_args{skip}    = [split /\s*,\s*/, $opts{skip}]  if defined $opts{skip};
+$doctor_args{verbose} = $opts{verbose} // 0;
+
+my $doctor = App::Project::Doctor->new(%doctor_args);
+
+printf "Checking %s ...\n\n", File::Spec->rel2abs($path)
+	unless $opts{quiet} || $opts{format} ne 'text';
+
+my $report = $doctor->run;
+
+# ---------------------------------------------------------------------------
+# Render output
+# ---------------------------------------------------------------------------
+
+if ($opts{format} eq 'json') {
+	print $report->render_json;
+} elsif ($opts{format} eq 'tap') {
+	print $report->render_tap;
+} else {
+	print $report->render_text(verbose => $opts{verbose} // 0);
+}
+
+# ---------------------------------------------------------------------------
+# Apply fixes
+# ---------------------------------------------------------------------------
+
+if ($opts{format} eq 'text' && $report->fixable) {
+	# --fix  -> apply all non-interactively
+	# --no-fix -> skip
+	# (default) -> prompt
+	if (defined $opts{fix} && !$opts{fix}) {
+		# --no-fix: do nothing
+	} else {
+		require App::Project::Doctor::Context;
+		my $fixer = App::Project::Doctor::Fixer->new(
+			report          => $report,
+			context         => App::Project::Doctor::Context->new(path => $path),
+			non_interactive => ($opts{fix} ? 1 : 0),
+		);
+		$fixer->run;
+	}
+}
+
+exit $report->exit_code;
+
+__END__
+
+=head1 NAME
+
+project-doctor - Pre-release health check for Perl CPAN distributions
+
+=head1 VERSION
+
+0.01
+
+=head1 SYNOPSIS
+
+  project-doctor [options] [PATH]
+
+  Options:
+    --check NAMES    Run only the named checks (comma-separated)
+    --skip  NAMES    Skip the named checks (comma-separated)
+    --fix            Apply all fixes non-interactively
+    --no-fix         Report only; never prompt for fixes
+    --format FORMAT  Output format: text (default), json, tap
+    --verbose, -v    Show per-finding detail for all checks
+    --quiet,   -q    Suppress banner and passing checks
+    --help,    -h    Show this help
+    --man            Show full manual page
+
+=head1 DESCRIPTION
+
+Runs a suite of diagnostics against a Perl CPAN distribution and reports
+on tests, CI configuration, META validity, POD coverage, dependency
+declarations, licensing, GitHub Actions workflows, security hygiene, and
+CPAN upload readiness.
+
+Fixable issues are listed at the end; the user is prompted (or fixes are
+applied automatically with C<--fix>).
+
+=head1 EXAMPLES
+
+  # Check the current directory
+  project-doctor
+
+  # Check a specific distribution
+  project-doctor ~/src/My-Dist
+
+  # Run only the Tests and POD checks
+  project-doctor --check=Tests,Pod
+
+  # JSON output for editor integration
+  project-doctor --format=json --no-fix
+
+  # CI usage: fail the build on any error
+  project-doctor --no-fix --format=tap
+
+=head1 EXIT STATUS
+
+  0   No errors found
+  1   One or more errors found
+
+=head1 CHECKS
+
+In default execution order:
+
+  Tests           Test suite exists and passes
+  CI              CI configuration is present
+  GitHubActions   Workflow files validate cleanly
+  Meta            META.yml/json is present and complete
+  Pod             All modules have valid POD
+  Dependencies    Used modules are declared as prerequisites
+  License         LICENSE file is present and consistent with META
+  Security        strict/warnings present; no hardcoded credentials
+  CpanReadiness   Version format, Changes, MANIFEST, README present
+
+=head1 AUTHOR
+
+Nigel Horne C<< <njh@bandsman.co.uk> >>
+
+=head1 LICENSE
+
+Copyright (C) 2026 Nigel Horne.
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
