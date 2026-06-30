@@ -28,7 +28,7 @@ WriteMakefile(
 		'Getopt::Long'              => '2.50',
 		'JSON::MaybeXS'             => 0,
 		'Params::Get'               => 0,
-		'Params::Validate::Strict'          => '1.29',
+		'Params::Validate::Strict'          => '0.35',
 		'Pod::Checker'              => 0,
 		'Pod::Usage'                => 0,
 		'Readonly'                  => '2.05',
