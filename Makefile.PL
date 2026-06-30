@@ -2,9 +2,18 @@ use strict;
 use warnings;
 use ExtUtils::MakeMaker;
 
+my $dist = {
+	COMPRESS => 'gzip -9f',	# Compress tarball using gzip
+	SUFFIX => 'gz',	# File suffix for tarball
+};
+
+if($^O eq 'darwin') {
+	$dist->{'TAR'} = 'gtar';
+}
+
 WriteMakefile(
 	NAME             => 'App::Project::Doctor',
-	AUTHOR           => 'Nigel Horne <njh@bandsman.co.uk>',
+	AUTHOR           => 'Nigel Horne <njh@nigelhorne.com>',
 	VERSION_FROM     => 'lib/App/Project/Doctor.pm',
 	ABSTRACT_FROM    => 'lib/App/Project/Doctor.pm',
 	LICENSE          => 'gpl_2',
@@ -19,7 +28,7 @@ WriteMakefile(
 		'Getopt::Long'              => '2.50',
 		'JSON::MaybeXS'             => 0,
 		'Params::Get'               => 0,
-		'Params::Validate'          => '1.29',
+		'Params::Validate::Strict'          => '1.29',
 		'Pod::Checker'              => 0,
 		'Pod::Usage'                => 0,
 		'Readonly'                  => '2.05',
@@ -31,7 +40,6 @@ WriteMakefile(
 		'App::Workflow::Lint'       => 0,
 	},
 	TEST_REQUIRES => {
-		'Test::More'          => '1.30',
 		'Test::Most'          => 0,
 		'Test::Exception'     => 0,
 		'Test::Mockingbird'   => 0,
@@ -43,16 +51,19 @@ WriteMakefile(
 	META_MERGE => {
 		'meta-spec' => { version => 2 },
 		resources   => {
+			homepage => 'https://metacpan.org/pod/App::Project::Doctor',
 			repository => {
 				type => 'git',
-				url  => 'https://github.com/nigelhorne/App-Project-Doctor.git',
+				url  => 'git://github.com/nigelhorne/App-Project-Doctor.git',
 				web  => 'https://github.com/nigelhorne/App-Project-Doctor',
 			},
 			bugtracker => {
-				web => 'https://github.com/nigelhorne/App-Project-Doctor/issues',
+				# web => 'https://github.com/nigelhorne/App-Project-Doctor/issues',
+				web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=App-Project-Doctor',
+				web => 'https://rt.cpan.org/Public/Dist/Display.html?Name=App-Project-Doctor',
+				mailto => 'bug-App-Project-Doctor@rt.cpan.org'
 			},
 		},
-	},
-	dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
+	}, dist => $dist,
 	clean => { FILES    => 'App-Project-Doctor-*' },
 );

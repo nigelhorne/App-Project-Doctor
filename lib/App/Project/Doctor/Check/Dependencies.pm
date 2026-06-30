@@ -16,7 +16,7 @@ Readonly::Hash my %CORE => map { $_ => 1 } qw(
 	strict warnings autodie Carp Scalar::Util List::Util POSIX Storable
 	File::Spec File::Find File::Path File::Temp File::Basename
 	Data::Dumper Exporter base parent overload constant vars utf8 feature
-	Getopt::Long Pod::Usage Params::Validate Params::Get Readonly
+	Getopt::Long Pod::Usage Params::Validate::Strict Params::Get Readonly
 );
 
 sub name        { 'Dependencies' }

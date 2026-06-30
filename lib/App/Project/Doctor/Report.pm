@@ -7,7 +7,7 @@ use autodie qw(:all);
 use Carp qw(croak carp);
 use Readonly;
 use Scalar::Util qw(blessed);
-use Params::Validate qw(:all);
+use Params::Validate::Strict qw(validate_strict);
 
 our $VERSION = '0.01';
 

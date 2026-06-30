@@ -8,7 +8,7 @@ use Carp qw(croak carp);
 use Readonly;
 use File::Spec;
 use File::Basename qw(dirname);
-use Params::Validate qw(:all);
+use Params::Validate::Strict qw(validate_strict);
 
 our $VERSION = '0.01';
 
@@ -41,13 +41,16 @@ Readonly::Array my @ROOT_MARKERS => qw(
 
 sub new {
 	my $class = shift;
-	my %args  = validate(@_, {
-		path    => { type => SCALAR,   default  => '.'             },
-		checks  => { type => ARRAYREF, default  => [@DEFAULT_CHECKS] },
-		skip    => { type => ARRAYREF, default  => []               },
-		verbose => { type => SCALAR,   default  => 0               },
-	});
-	return bless \%args, $class;
+	my $args = validate_strict(
+		schema => {
+			path    => { type => 'scalar',   optional => 1, default => '.'               },
+			checks  => { type => 'arrayref', optional => 1, default => [@DEFAULT_CHECKS] },
+			skip    => { type => 'arrayref', optional => 1, default => []                },
+			verbose => { type => 'scalar',   optional => 1, default => 0                 },
+		},
+		args => {@_},
+	) or croak $@;
+	return bless $args, $class;
 }
 
 # ---------------------------------------------------------------------------

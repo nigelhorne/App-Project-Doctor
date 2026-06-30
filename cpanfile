@@ -13,7 +13,7 @@ requires 'File::Spec';
 requires 'Getopt::Long', '2.50';
 requires 'JSON::MaybeXS';
 requires 'Params::Get';
-requires 'Params::Validate', '1.29';
+requires 'Params::Validate::Strict', '1.29';
 requires 'Pod::Checker';
 requires 'Pod::Usage';
 requires 'Readonly', '2.05';
@@ -27,7 +27,6 @@ on 'test' => sub {
 	requires 'Test::Exception';
 	requires 'Test::Memory::Cycle';
 	requires 'Test::Mockingbird';
-	requires 'Test::More', '1.30';
 	requires 'Test::Most';
 	requires 'Test::Returns';
 };

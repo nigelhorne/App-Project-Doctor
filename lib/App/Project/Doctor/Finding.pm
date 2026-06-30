@@ -6,8 +6,8 @@ use autodie qw(:all);
 
 use Carp qw(croak carp);
 use Readonly;
-use Scalar::Util qw(looks_like_number);
-use Params::Validate qw(:all);
+
+use Params::Validate::Strict qw(validate_strict);
 
 our $VERSION = '0.01';
 
@@ -35,26 +35,26 @@ sub new {
 	my %raw = @_;
 	croak 'message must be a non-empty string'
 		unless defined $raw{message} && length $raw{message};
-	my %args  = validate(@_, {
-		severity   => { type => SCALAR,   default  => 'info' },
-		message    => { type => SCALAR },
-		detail     => { type => SCALAR,   default  => '' },
-		fix        => { type => CODEREF,  optional => 1 },
-		check_name => { type => SCALAR,   default  => 'Unknown' },
-		file       => { type => SCALAR,   default  => '' },
-		line       => { type => SCALAR,   optional => 1,
-		                callbacks => { 'positive integer' => sub {
-		                    !defined $_[0] || (looks_like_number($_[0]) && $_[0] >= 1)
-		                }}},
-	});
+	my $args = validate_strict(
+		schema => {
+			severity   => { type => 'scalar',  optional => 1, default => 'info'    },
+			message    => { type => 'scalar'                                        },
+			detail     => { type => 'scalar',  optional => 1, default => ''        },
+			fix        => { type => 'coderef', optional => 1                       },
+			check_name => { type => 'scalar',  optional => 1, default => 'Unknown' },
+			file       => { type => 'scalar',  optional => 1, default => ''        },
+			line       => { type => 'integer', optional => 1, min => 1             },
+		},
+		args => {@_},
+	) or croak $@;
 
-	croak "Invalid severity '$args{severity}'"
-		unless $VALID_SEVERITY{ $args{severity} };
+	croak "Invalid severity '$args->{severity}'"
+		unless $VALID_SEVERITY{ $args->{severity} };
 
 	croak 'message must be a non-empty string'
-		unless defined $args{message} && length $args{message};
+		unless defined $args->{message} && length $args->{message};
 
-	return bless \%args, $class;
+	return bless $args, $class;
 }
 
 # ---------------------------------------------------------------------------

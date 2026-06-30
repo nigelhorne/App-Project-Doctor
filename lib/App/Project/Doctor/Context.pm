@@ -8,7 +8,7 @@ use Carp qw(croak carp);
 use Readonly;
 use File::Spec;
 use File::Find ();
-use Params::Validate qw(:all);
+use Params::Validate::Strict qw(validate_strict);
 use Params::Get;
 
 our $VERSION = '0.01';
@@ -26,17 +26,20 @@ Readonly::Array my @BUILDER_FILES   => qw(Makefile.PL Build.PL dist.ini cpanfile
 
 sub new {
 	my $class = shift;
-	my %args  = validate(@_, {
-		root    => { type => SCALAR, default => '.' },
-		verbose => { type => SCALAR, default => 0   },
-	});
+	my $args = validate_strict(
+		schema => {
+			root    => { type => 'scalar', optional => 1, default => '.' },
+			verbose => { type => 'scalar', optional => 1, default => 0   },
+		},
+		args => {@_},
+	) or croak $@;
 
-	croak "root '$args{root}' is not a directory"
-		unless -d $args{root};
+	croak "root '$args->{root}' is not a directory"
+		unless -d $args->{root};
 
 	return bless {
-		root    => File::Spec->rel2abs($args{root}),
-		verbose => $args{verbose},
+		root    => File::Spec->rel2abs($args->{root}),
+		verbose => $args->{verbose},
 	}, $class;
 }
 

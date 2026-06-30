@@ -6,7 +6,7 @@ use autodie qw(:all);
 
 use Carp qw(croak carp);
 use Scalar::Util qw(blessed);
-use Params::Validate qw(:all);
+use Params::Validate::Strict qw(validate_strict);
 
 our $VERSION = '0.01';
 
@@ -16,12 +16,19 @@ our $VERSION = '0.01';
 
 sub new {
 	my $class = shift;
-	my %args  = validate(@_, {
-		report          => { isa  => 'App::Project::Doctor::Report'  },
-		context         => { isa  => 'App::Project::Doctor::Context' },
-		non_interactive => { type => SCALAR, default => 0 },
-	});
-	return bless \%args, $class;
+	my $args = validate_strict(
+		schema => {
+			report          => { type => 'object'                          },
+			context         => { type => 'object'                          },
+			non_interactive => { type => 'scalar', optional => 1, default => 0 },
+		},
+		args => {@_},
+	) or croak $@;
+	croak "report must be an App::Project::Doctor::Report"
+		unless blessed($args->{report}) && $args->{report}->isa('App::Project::Doctor::Report');
+	croak "context must be an App::Project::Doctor::Context"
+		unless blessed($args->{context}) && $args->{context}->isa('App::Project::Doctor::Context');
+	return bless $args, $class;
 }
 
 # ---------------------------------------------------------------------------
