@@ -1,3 +1,4 @@
+cpanfile
 lib/App/Project/Doctor.pm
 lib/App/Project/Doctor/Check/Base.pm
 lib/App/Project/Doctor/Check/CI.pm
