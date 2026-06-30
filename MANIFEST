@@ -22,4 +22,5 @@ MANIFEST.SKIP
 README.md
 script/project-doctor
 t/function.t
+t/integration.t
 t/unit.t

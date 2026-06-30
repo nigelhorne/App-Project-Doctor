@@ -93,8 +93,8 @@ sub _collect_declared {
 	}
 
 	if ($ctx->has_file('Makefile.PL')) {
-		require App::makefilepl2cpanfile;
 		my $text = eval {
+			require App::makefilepl2cpanfile;
 			App::makefilepl2cpanfile::generate(makefile => $ctx->abs_path('Makefile.PL'))
 		};
 		carp "App::makefilepl2cpanfile failed: $@" if $@;

@@ -212,7 +212,22 @@ them as text, JSON, or TAP.
 
 =head2 new
 
-No arguments.
+Creates an empty report ready to receive findings.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+None.
+
+=head4 Output
+
+Blessed hashref of type C<App::Project::Doctor::Report>.
+
+=head3 FORMAL SPECIFICATION
+
+  new : () -> Report
+  new () == { findings : [] }
 
 =head1 METHODS
 
@@ -226,15 +241,78 @@ No arguments.
 
 =head4 Output
 
-Returns C<$self> for chaining.
+Returns C<$self> for chaining.  Croaks if any element is not an
+C<App::Project::Doctor::Finding>.
 
-=head2 all_findings / errors / warnings / passes / fixable
+=head2 all_findings
 
-List-context filters on the accumulated findings.
+Returns every accumulated Finding in insertion order.
 
-=head2 has_errors / has_warnings
+=head3 API SPECIFICATION
 
-Boolean predicates.
+=head4 Input
+
+None.
+
+=head4 Output
+
+List of C<App::Project::Doctor::Finding>.
+
+=head2 errors / warnings / passes
+
+Return the subset of accumulated findings with the matching severity.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+None.
+
+=head4 Output
+
+List of C<App::Project::Doctor::Finding>.
+
+=head2 fixable
+
+Returns findings that carry an automated fix coderef.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+None.
+
+=head4 Output
+
+List of C<App::Project::Doctor::Finding>.
+
+=head2 has_errors
+
+Returns 1 when the report contains at least one error-severity finding, 0 otherwise.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+None.
+
+=head4 Output
+
+Integer 1 or 0.
+
+=head2 has_warnings
+
+Returns 1 when the report contains at least one warning-severity finding, 0 otherwise.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+None.
+
+=head4 Output
+
+Integer 1 or 0.
 
 =head2 exit_code
 
@@ -294,8 +372,26 @@ TAP string.
 
   Report == { findings : [Finding] }
 
+  all_findings : Report -> [Finding]
+  all_findings r == findings r
+
+  errors : Report -> [Finding]
+  errors r == { f in findings r | severity f = error }
+
+  warnings : Report -> [Finding]
+  warnings r == { f in findings r | severity f = warning }
+
+  passes : Report -> [Finding]
+  passes r == { f in findings r | severity f = pass }
+
+  fixable : Report -> [Finding]
+  fixable r == { f in findings r | is_fixable f }
+
   has_errors : Report -> Bool
-  has_errors r == exists f in findings r st severity f = error
+  has_errors r == |errors r| > 0
+
+  has_warnings : Report -> Bool
+  has_warnings r == |warnings r| > 0
 
   exit_code : Report -> {0,1}
   exit_code r == if has_errors r then 1 else 0
