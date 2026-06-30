@@ -1,11 +1,11 @@
 ## run
 
-Detects the distro root, instantiates all enabled checks, runs them in
-order, and returns an [App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport).
+Detects the distro root, instantiates all enabled checks, runs them in order,
+and returns an [App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport).
 
 # NAME
 
-App::Project::Doctor - Unified pre-release health check for Perl distributions
+App::Project::Doctor - Unified pre-release health check for Perl CPAN distributions
 
 # VERSION
 
@@ -19,95 +19,95 @@ App::Project::Doctor - Unified pre-release health check for Perl distributions
     # Programmatic
     use App::Project::Doctor;
 
-    my $doctor = App::Project::Doctor->new(
-        path    => '/path/to/my-dist',
-        verbose => 1,
-    );
+    my $doctor = App::Project::Doctor->new(path => '/path/to/my-dist');
     my $report = $doctor->run;
     print $report->render_text;
     exit $report->exit_code;
 
 # DESCRIPTION
 
-`App::Project::Doctor` orchestrates a suite of diagnostic checks against a
-Perl CPAN distribution.  It combines the functionality of:
+Orchestrates a suite of diagnostic checks against a Perl CPAN distribution,
+combining [App::Workflow::Lint](https://metacpan.org/pod/App%3A%3AWorkflow%3A%3ALint), [App::GHGen](https://metacpan.org/pod/App%3A%3AGHGen), [App::makefilepl2cpanfile](https://metacpan.org/pod/App%3A%3Amakefilepl2cpanfile),
+and [App::Test::Generator](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator) into a single interactive pre-upload tool.
 
-- [App::Workflow::Lint](https://metacpan.org/pod/App%3A%3AWorkflow%3A%3ALint)  -- GitHub Actions workflow validation
-- [App::GHGen](https://metacpan.org/pod/App%3A%3AGHGen)  -- GitHub Actions workflow generation
-- [App::makefilepl2cpanfile](https://metacpan.org/pod/App%3A%3Amakefilepl2cpanfile)  -- dependency extraction
-- [App::Test::Generator](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator)  -- test scaffolding
+Each enabled `App::Project::Doctor::Check::*` plugin receives an
+[App::Project::Doctor::Context](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AContext) and returns a list of
+[App::Project::Doctor::Finding](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AFinding) objects which are collected into an
+[App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport).
 
-into a single interactive tool designed to be run before every CPAN upload.
-Each check produces a list of [App::Project::Doctor::Finding](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AFinding) objects.
-Findings with associated fix coderefs are offered interactively.
+# CONSTRUCTOR
 
-# ATTRIBUTES
-
-## path
-
-Path from which to detect the distribution root.  Defaults to `.`
-(current working directory).  The root is the nearest ancestor directory
-containing `Makefile.PL`, `Build.PL`, `dist.ini`, or `cpanfile`.
-
-## checks
-
-ArrayRef of check class name suffixes to run.  Defaults to all checks in
-the canonical order:
-
-    Tests CI GitHubActions Meta Pod Dependencies License Security CpanReadiness
-
-## skip
-
-ArrayRef of check names to exclude (case-insensitive).  Takes precedence
-over `checks`.
-
-## verbose
-
-Boolean.  When true, each check's name is printed as it starts.  Default 0.
-
-# METHODS
-
-## run
-
-Runs all enabled checks and returns an [App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport).
+## new( %args )
 
 ### API SPECIFICATION
 
 #### Input
 
-None (configuration via constructor attributes).
+    path    : String    -- start path for root detection    default '.'
+    checks  : ArrayRef  -- check name suffixes to run       default all
+    skip    : ArrayRef  -- check names to exclude           default []
+    verbose : Bool                                          default 0
 
 #### Output
 
-[App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport) instance.
+Blessed hashref of type `App::Project::Doctor`.
+
+# ACCESSORS
+
+`path`, `checks`, `skip`, `verbose` -- read-only.
+
+# METHODS
+
+## run
+
+### API SPECIFICATION
+
+#### Input
+
+None.
+
+#### Output
+
+[App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport).
 
 ### MESSAGES
 
-    Code | Trigger                          | Resolution
-    -----|----------------------------------|---------------------------------------
+    Code | Trigger                         | Resolution
+    -----|----------------------------------|----------------------------------------
     DR01 | Cannot detect distribution root  | Run from within a distribution directory
-    DR02 | A check module cannot be loaded  | Install the check's prerequisites
+    DR02 | A check class cannot be loaded   | Install the check's prerequisites
 
 ### FORMAL SPECIFICATION
 
-    Doctor == { path : Path, checks : [CheckName], skip : [CheckName], verbose : Bool }
+    Doctor == { path : Path, checks : [Name], skip : [Name], verbose : Bool }
 
     run : Doctor -> Report
     run d ==
-      let root     = detect_root (path d)
-          ctx      = Context { root, verbose = verbose d }
-          enabled  = sort_by_order (checks d \\ skip d)
-          findings = concat [ check c ctx | c <- enabled ]
-      in  Report { findings }
+      let root    = detect_root (path d)
+          ctx     = Context { root, verbose = verbose d }
+          enabled = sort_by_order (checks d \\ skip d)
+      in  Report { concat [ check c ctx | c <- enabled ] }
 
     detect_root : Path -> Path | undefined
-    detect_root p == nearest ancestor of p containing a ROOT_MARKER file
+    detect_root p == nearest ancestor of p containing a ROOT_MARKER
+
+# CHECKS
+
+In default execution order:
+
+    Tests           t/ exists, .t files present, prove passes
+    CI              At least one CI configuration present
+    GitHubActions   Workflow YAML validates via App::Workflow::Lint
+    Meta            META.yml/json parsed and complete
+    Pod             All .pm files have valid POD
+    Dependencies    Used modules declared as prerequisites
+    License         LICENSE file present and consistent with META
+    Security        strict/warnings everywhere; no hardcoded secrets
+    CpanReadiness   Version format, Changes, MANIFEST, README
 
 # LIMITATIONS
 
-Check execution is sequential.  No parallelism is implemented.
-The distro root detection halts at the filesystem root; very deep directory
-trees may cause a perceptible delay.
+Checks run sequentially; no parallelism.
 
 # AUTHOR
 
