@@ -7,6 +7,7 @@ use autodie qw(:all);
 use Carp qw(croak carp);
 use Readonly;
 use File::Spec;
+use File::Basename qw(dirname);
 use Params::Validate qw(:all);
 
 our $VERSION = '0.01';
@@ -43,7 +44,7 @@ sub new {
 	my %args  = validate(@_, {
 		path    => { type => SCALAR,   default  => '.'             },
 		checks  => { type => ARRAYREF, default  => [@DEFAULT_CHECKS] },
-		skip    => { type => ARRAYREF, default  => sub { [] }      },
+		skip    => { type => ARRAYREF, default  => []               },
 		verbose => { type => SCALAR,   default  => 0               },
 	});
 	return bless \%args, $class;
@@ -71,6 +72,7 @@ and returns an L<App::Project::Doctor::Report>.
 
 sub run {
 	my $self = shift;
+	local $@;    # protect caller's $@ from our internal eval blocks
 
 	my $root = $self->_detect_root($self->path)
 		or croak "Cannot detect a distribution root from '" . $self->path . "'";
@@ -80,10 +82,15 @@ sub run {
 
 	for my $check ($self->_build_checks) {
 		printf "  Running: %s ...\n", $check->name if $self->verbose;
-		my @findings = eval { $check->check($ctx) };
-		if ($@) {
-			carp sprintf("Check '%s' threw: %s", $check->name, $@);
-			next;
+		my @findings;
+		{
+			# local $@ so the eval never clobbers the caller's $@.
+			local $@;
+			@findings = eval { $check->check($ctx) };
+			if ($@) {
+				carp sprintf("Check '%s' threw: %s", $check->name, $@);
+				next;
+			}
 		}
 		$report->add_findings(@findings);
 	}
@@ -104,7 +111,7 @@ sub _detect_root {
 		for my $marker (@ROOT_MARKERS) {
 			return $dir if -e File::Spec->catfile($dir, $marker);
 		}
-		my $parent = File::Spec->catdir($dir, File::Spec->updir);
+		my $parent = dirname($dir);
 		last if $parent eq $dir;
 		$dir = $parent;
 	}

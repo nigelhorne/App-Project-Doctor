@@ -107,6 +107,26 @@ App::Project::Doctor::Check::GitHubActions - Validate GitHub Actions workflows
 Uses L<App::Workflow::Lint> to validate every C<.yml>/C<.yaml> file under
 C<.github/workflows/>.  A fix via L<App::GHGen> is offered when no files exist.
 
+=head1 METHODS
+
+=head2 check( $context )
+
+Validates all GitHub Actions workflow YAML files.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+  $context : App::Project::Doctor::Context
+
+=head4 Output
+
+  List of App::Project::Doctor::Finding --
+    info    when .github/workflows/ is absent (CI check owns the error),
+    warning (fixable) when directory exists but contains no YAML,
+    one error per lint violation found,
+    pass    when all workflow files validate cleanly.
+
 =head3 MESSAGES
 
   Code | Trigger                       | Resolution

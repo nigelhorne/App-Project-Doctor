@@ -64,6 +64,24 @@ App::Project::Doctor::Check::CI - Check that a CI configuration exists
 Reports an error when no supported CI configuration is found.  Detailed
 GitHub Actions validation is handled by L<App::Project::Doctor::Check::GitHubActions>.
 
+=head1 METHODS
+
+=head2 check( $context )
+
+Inspects the distro root for any recognised CI configuration.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+  $context : App::Project::Doctor::Context
+
+=head4 Output
+
+  List of exactly one App::Project::Doctor::Finding --
+    pass    when at least one CI config file or directory is present,
+    error   (fixable) when none are found.
+
 =head3 MESSAGES
 
   Code | Trigger           | Resolution

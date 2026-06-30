@@ -94,9 +94,11 @@ sub _collect_declared {
 
 	if ($ctx->has_file('Makefile.PL')) {
 		require App::makefilepl2cpanfile;
-		my $data = eval { App::makefilepl2cpanfile->new->parse($ctx->abs_path('Makefile.PL')) };
+		my $text = eval {
+			App::makefilepl2cpanfile::generate(makefile => $ctx->abs_path('Makefile.PL'))
+		};
 		carp "App::makefilepl2cpanfile failed: $@" if $@;
-		return $data;
+		return defined $text ? _parse_cpanfile_text($text) : undef;
 	}
 
 	return undef;
@@ -107,9 +109,18 @@ sub _parse_cpanfile {
 	my %mods;
 	open my $fh, '<', $path;
 	while (<$fh>) {
-		$mods{$1} = 0 if /^requires\s+['"]?([\w:]+)['"]?/;
+		$mods{$1} = 1 if /^requires\s+['"]?([\w:]+)['"]?/;
 	}
 	close $fh;
+	return \%mods;
+}
+
+sub _parse_cpanfile_text {
+	my $text = shift;
+	my %mods;
+	for my $line (split /\n/, $text) {
+		$mods{$1} = 1 if $line =~ /^requires\s+['"]?([\w:]+)['"]?/;
+	}
 	return \%mods;
 }
 

@@ -91,6 +91,27 @@ App::Project::Doctor::Check::Meta - Check META file presence and validity
 Uses L<CPAN::Meta> to parse the distribution META file and verifies that all
 required fields (name, version, author, abstract, license) are present.
 
+=head1 METHODS
+
+=head2 check( $context )
+
+Locates the first available META file, parses it, and validates required fields.
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+  $context : App::Project::Doctor::Context
+
+=head4 Output
+
+  List of App::Project::Doctor::Finding --
+    warning         when no META.* file is found (builder file present),
+    warning + error when no META.* and no builder file found,
+    error           when the META file cannot be parsed,
+    one error per missing required field (name/version/author/abstract/license),
+    pass            when all required fields are present.
+
 =head3 MESSAGES
 
   Code | Trigger                     | Resolution

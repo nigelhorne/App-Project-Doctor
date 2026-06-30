@@ -97,9 +97,10 @@ sub _fix_pragma {
 		my @lines = <$fh>;
 		close $fh;
 
-		# Insert after the first 'package' declaration, or at line 0.
-		my $insert_at = 0;
-		for my $i (0 .. $#lines) {
+		# A shebang must remain the very first line of a script so the OS
+		# can recognise it; preserve it by starting the search one line in.
+		my $insert_at = (@lines && $lines[0] =~ /^#!/) ? 1 : 0;
+		for my $i ($insert_at .. $#lines) {
 			if ($lines[$i] =~ /^\s*package\s+\S+/) {
 				$insert_at = $i + 1;
 				last;

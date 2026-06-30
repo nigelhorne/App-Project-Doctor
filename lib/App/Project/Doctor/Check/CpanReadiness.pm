@@ -96,7 +96,7 @@ sub _read_version {
 	my $ctx = shift;
 	for my $mod (@{ $ctx->lib_modules }) {
 		my $content = eval { $ctx->slurp($mod) } // next;
-		if (my ($v) = $content =~ /^\s*our\s+\$VERSION\s*=\s*['"]?([\d._]+)['"]?/m) {
+		if (my ($v) = $content =~ /^\s*our\s+\$VERSION\s*=\s*['"]?([^'";\s]+)['"]?/m) {
 			return $v;
 		}
 	}

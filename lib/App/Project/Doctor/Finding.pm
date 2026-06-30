@@ -30,6 +30,11 @@ Readonly::Hash my %VALID_SEVERITY => map { $_ => 1 } qw(error warning pass info)
 
 sub new {
 	my $class = shift;
+	# Validate message first so the documented error fires for undef and empty,
+	# before Params::Validate can emit its own generic type error.
+	my %raw = @_;
+	croak 'message must be a non-empty string'
+		unless defined $raw{message} && length $raw{message};
 	my %args  = validate(@_, {
 		severity   => { type => SCALAR,   default  => 'info' },
 		message    => { type => SCALAR },

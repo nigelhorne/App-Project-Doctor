@@ -120,7 +120,7 @@ Returns an arrayref of .pm paths (relative to root) found under lib/.
 
 sub lib_modules {
 	my $self = shift;
-	return $self->perl_files('lib');
+	return $self->find_files('lib', '.pm');
 }
 
 =head2 test_files
@@ -131,7 +131,7 @@ Returns an arrayref of .t paths (relative to root) found under t/.
 
 sub test_files {
 	my $self = shift;
-	return $self->perl_files('t');
+	return $self->find_files('t', '.t');
 }
 
 =head2 git_root
