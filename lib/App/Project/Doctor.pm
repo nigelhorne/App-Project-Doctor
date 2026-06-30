@@ -4,12 +4,10 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
 use Carp qw(croak carp);
 use Readonly;
 use File::Spec;
-use Scalar::Util qw(blessed);
+use Params::Validate qw(:all);
 
 our $VERSION = '0.01';
 
@@ -17,7 +15,6 @@ our $VERSION = '0.01';
 # Constants
 # ---------------------------------------------------------------------------
 
-# Ordered list of all check class names (short suffix form).
 Readonly::Array my @DEFAULT_CHECKS => qw(
 	Tests
 	CI
@@ -30,7 +27,6 @@ Readonly::Array my @DEFAULT_CHECKS => qw(
 	CpanReadiness
 );
 
-# Files that mark a distribution root when walking up the directory tree.
 Readonly::Array my @ROOT_MARKERS => qw(
 	Makefile.PL
 	Build.PL
@@ -39,28 +35,28 @@ Readonly::Array my @ROOT_MARKERS => qw(
 );
 
 # ---------------------------------------------------------------------------
-# Attributes
+# Constructor
 # ---------------------------------------------------------------------------
 
-has path => (
-	is      => 'ro',
-	default => sub { '.' },
-);
+sub new {
+	my $class = shift;
+	my %args  = validate(@_, {
+		path    => { type => SCALAR,   default  => '.'             },
+		checks  => { type => ARRAYREF, default  => [@DEFAULT_CHECKS] },
+		skip    => { type => ARRAYREF, default  => sub { [] }      },
+		verbose => { type => SCALAR,   default  => 0               },
+	});
+	return bless \%args, $class;
+}
 
-has checks => (
-	is      => 'ro',
-	default => sub { [@DEFAULT_CHECKS] },
-);
+# ---------------------------------------------------------------------------
+# Accessors
+# ---------------------------------------------------------------------------
 
-has skip => (
-	is      => 'ro',
-	default => sub { [] },
-);
-
-has verbose => (
-	is      => 'ro',
-	default => 0,
-);
+sub path    { $_[0]->{path}    }
+sub checks  { $_[0]->{checks}  }
+sub skip    { $_[0]->{skip}    }
+sub verbose { $_[0]->{verbose} }
 
 # ---------------------------------------------------------------------------
 # Public interface
@@ -68,29 +64,25 @@ has verbose => (
 
 =head2 run
 
-Detects the distro root, instantiates all enabled checks, runs them in
-order, and returns an L<App::Project::Doctor::Report>.
+Detects the distro root, instantiates all enabled checks, runs them in order,
+and returns an L<App::Project::Doctor::Report>.
 
 =cut
 
 sub run {
 	my $self = shift;
 
-	my $root = $self->_detect_root($self->path);
-	croak "Cannot detect a distribution root from '" . $self->path . "'"
-		unless defined $root;
+	my $root = $self->_detect_root($self->path)
+		or croak "Cannot detect a distribution root from '" . $self->path . "'";
 
-	my $ctx = $self->_build_context($root);
+	my $ctx    = $self->_build_context($root);
 	my $report = $self->_build_report;
-	my @checks = $self->_build_checks;
 
-	for my $check (@checks) {
-		if ($self->verbose) {
-			printf "  Running check: %s ...\n", $check->name;
-		}
+	for my $check ($self->_build_checks) {
+		printf "  Running: %s ...\n", $check->name if $self->verbose;
 		my @findings = eval { $check->check($ctx) };
 		if ($@) {
-			carp sprintf("Check '%s' threw an exception: %s", $check->name, $@);
+			carp sprintf("Check '%s' threw: %s", $check->name, $@);
 			next;
 		}
 		$report->add_findings(@findings);
@@ -103,18 +95,17 @@ sub run {
 # Private helpers
 # ---------------------------------------------------------------------------
 
-# Walk up from $start_dir until we find a directory containing a ROOT_MARKER.
-# Returns the directory path, or undef if none found.
+# Walk up from $start until a ROOT_MARKER is found; return that directory
+# or undef when we hit the filesystem root without finding one.
 sub _detect_root {
 	my ($self, $start) = @_;
 	my $dir = File::Spec->rel2abs($start);
-
 	while (1) {
 		for my $marker (@ROOT_MARKERS) {
 			return $dir if -e File::Spec->catfile($dir, $marker);
 		}
 		my $parent = File::Spec->catdir($dir, File::Spec->updir);
-		last if $parent eq $dir;    # reached filesystem root
+		last if $parent eq $dir;
 		$dir = $parent;
 	}
 	return undef;
@@ -123,10 +114,7 @@ sub _detect_root {
 sub _build_context {
 	my ($self, $root) = @_;
 	require App::Project::Doctor::Context;
-	return App::Project::Doctor::Context->new(
-		root    => $root,
-		verbose => $self->verbose,
-	);
+	return App::Project::Doctor::Context->new(root => $root, verbose => $self->verbose);
 }
 
 sub _build_report {
@@ -134,26 +122,26 @@ sub _build_report {
 	return App::Project::Doctor::Report->new;
 }
 
-# Instantiate check objects, filtering out skipped ones.
+# Instantiate and sort check objects, excluding those listed in skip.
 sub _build_checks {
-	my $self = shift;
+	my $self  = shift;
+	my %skip  = map { lc($_) => 1 } @{ $self->skip };
+	my @built;
 
-	my %skip = map { lc($_) => 1 } @{ $self->skip };
-	my @enabled;
+	require App::Project::Doctor::Check::Base;
 
 	for my $name (@{ $self->checks }) {
 		next if $skip{ lc($name) };
 		my $class = "App::Project::Doctor::Check::$name";
-		eval "require $class";    ## no critic
+		eval "require $class";    ## no critic (ProhibitStringyEval)
 		if ($@) {
-			carp "Could not load check '$class': $@";
+			carp "Could not load '$class': $@";
 			next;
 		}
-		push @enabled, $class->new;
+		push @built, $class->new;
 	}
 
-	# Sort by each check's declared order.
-	return sort { $a->order <=> $b->order } @enabled;
+	return sort { $a->order <=> $b->order } @built;
 }
 
 1;
@@ -162,7 +150,7 @@ __END__
 
 =head1 NAME
 
-App::Project::Doctor - Unified pre-release health check for Perl distributions
+App::Project::Doctor - Unified pre-release health check for Perl CPAN distributions
 
 =head1 VERSION
 
@@ -176,102 +164,95 @@ App::Project::Doctor - Unified pre-release health check for Perl distributions
   # Programmatic
   use App::Project::Doctor;
 
-  my $doctor = App::Project::Doctor->new(
-      path    => '/path/to/my-dist',
-      verbose => 1,
-  );
+  my $doctor = App::Project::Doctor->new(path => '/path/to/my-dist');
   my $report = $doctor->run;
   print $report->render_text;
   exit $report->exit_code;
 
 =head1 DESCRIPTION
 
-C<App::Project::Doctor> orchestrates a suite of diagnostic checks against a
-Perl CPAN distribution.  It combines the functionality of:
+Orchestrates a suite of diagnostic checks against a Perl CPAN distribution,
+combining L<App::Workflow::Lint>, L<App::GHGen>, L<App::makefilepl2cpanfile>,
+and L<App::Test::Generator> into a single interactive pre-upload tool.
 
-=over 4
+Each enabled C<App::Project::Doctor::Check::*> plugin receives an
+L<App::Project::Doctor::Context> and returns a list of
+L<App::Project::Doctor::Finding> objects which are collected into an
+L<App::Project::Doctor::Report>.
 
-=item * L<App::Workflow::Lint>  -- GitHub Actions workflow validation
+=head1 CONSTRUCTOR
 
-=item * L<App::GHGen>  -- GitHub Actions workflow generation
-
-=item * L<App::makefilepl2cpanfile>  -- dependency extraction
-
-=item * L<App::Test::Generator>  -- test scaffolding
-
-=back
-
-into a single interactive tool designed to be run before every CPAN upload.
-Each check produces a list of L<App::Project::Doctor::Finding> objects.
-Findings with associated fix coderefs are offered interactively.
-
-=head1 ATTRIBUTES
-
-=head2 path
-
-Path from which to detect the distribution root.  Defaults to C<.>
-(current working directory).  The root is the nearest ancestor directory
-containing C<Makefile.PL>, C<Build.PL>, C<dist.ini>, or C<cpanfile>.
-
-=head2 checks
-
-ArrayRef of check class name suffixes to run.  Defaults to all checks in
-the canonical order:
-
-  Tests CI GitHubActions Meta Pod Dependencies License Security CpanReadiness
-
-=head2 skip
-
-ArrayRef of check names to exclude (case-insensitive).  Takes precedence
-over C<checks>.
-
-=head2 verbose
-
-Boolean.  When true, each check's name is printed as it starts.  Default 0.
-
-=head1 METHODS
-
-=head2 run
-
-Runs all enabled checks and returns an L<App::Project::Doctor::Report>.
+=head2 new( %args )
 
 =head3 API SPECIFICATION
 
 =head4 Input
 
-None (configuration via constructor attributes).
+  path    : String    -- start path for root detection    default '.'
+  checks  : ArrayRef  -- check name suffixes to run       default all
+  skip    : ArrayRef  -- check names to exclude           default []
+  verbose : Bool                                          default 0
 
 =head4 Output
 
-L<App::Project::Doctor::Report> instance.
+Blessed hashref of type C<App::Project::Doctor>.
+
+=head1 ACCESSORS
+
+C<path>, C<checks>, C<skip>, C<verbose> -- read-only.
+
+=head1 METHODS
+
+=head2 run
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+None.
+
+=head4 Output
+
+L<App::Project::Doctor::Report>.
 
 =head3 MESSAGES
 
-  Code | Trigger                          | Resolution
-  -----|----------------------------------|---------------------------------------
+  Code | Trigger                         | Resolution
+  -----|----------------------------------|----------------------------------------
   DR01 | Cannot detect distribution root  | Run from within a distribution directory
-  DR02 | A check module cannot be loaded  | Install the check's prerequisites
+  DR02 | A check class cannot be loaded   | Install the check's prerequisites
 
 =head3 FORMAL SPECIFICATION
 
-  Doctor == { path : Path, checks : [CheckName], skip : [CheckName], verbose : Bool }
+  Doctor == { path : Path, checks : [Name], skip : [Name], verbose : Bool }
 
   run : Doctor -> Report
   run d ==
-    let root     = detect_root (path d)
-        ctx      = Context { root, verbose = verbose d }
-        enabled  = sort_by_order (checks d \\ skip d)
-        findings = concat [ check c ctx | c <- enabled ]
-    in  Report { findings }
+    let root    = detect_root (path d)
+        ctx     = Context { root, verbose = verbose d }
+        enabled = sort_by_order (checks d \\ skip d)
+    in  Report { concat [ check c ctx | c <- enabled ] }
 
   detect_root : Path -> Path | undefined
-  detect_root p == nearest ancestor of p containing a ROOT_MARKER file
+  detect_root p == nearest ancestor of p containing a ROOT_MARKER
+
+=head1 CHECKS
+
+In default execution order:
+
+  Tests           t/ exists, .t files present, prove passes
+  CI              At least one CI configuration present
+  GitHubActions   Workflow YAML validates via App::Workflow::Lint
+  Meta            META.yml/json parsed and complete
+  Pod             All .pm files have valid POD
+  Dependencies    Used modules declared as prerequisites
+  License         LICENSE file present and consistent with META
+  Security        strict/warnings everywhere; no hardcoded secrets
+  CpanReadiness   Version format, Changes, MANIFEST, README
 
 =head1 LIMITATIONS
 
-Check execution is sequential.  No parallelism is implemented.
-The distro root detection halts at the filesystem root; very deep directory
-trees may cause a perceptible delay.
+Checks run sequentially; no parallelism.
 
 =head1 AUTHOR
 

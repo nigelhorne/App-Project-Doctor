@@ -4,35 +4,18 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
+use parent -norequire, 'App::Project::Doctor::Check::Base';
+
 use Carp qw(croak carp);
 use Readonly;
 
-with 'App::Project::Doctor::Check::Role';
-
 our $VERSION = '0.01';
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-# Acceptable version formats for CPAN.
-Readonly::Scalar my $VERSION_RE => qr/^\d+\.\d+(?:\.\d+)?(?:_\d+)?$/;
-
-# Files expected in a release-ready distribution.
-Readonly::Array my @EXPECTED_FILES => qw(
-	Changes
-	MANIFEST
-	README
-);
-
-# ---------------------------------------------------------------------------
-# Role interface
-# ---------------------------------------------------------------------------
+Readonly::Scalar my $VERSION_RE    => qr/^\d+\.\d+(?:\.\d+)?(?:_\d+)?$/;
+Readonly::Array  my @REQUIRED_FILES => qw(Changes MANIFEST README);
 
 sub name        { 'CPAN Readiness' }
-sub description { 'Distribution is ready for CPAN upload (version, Changes, MANIFEST, README).' }
+sub description { 'Version format, Changes, MANIFEST, and README are present.' }
 sub can_fix     { 0 }
 sub order       { 90 }
 
@@ -42,57 +25,56 @@ sub check {
 
 	my @findings;
 
-	# --- Version format -------------------------------------------------------
+	# Version format check.
 	my $version = _read_version($ctx);
 	if (defined $version) {
 		if ($version !~ $VERSION_RE) {
-			push @findings, _finding(
+			push @findings, _f(
 				severity => 'error',
-				message  => "Version '$version' does not match CPAN version format (X.YY or X.YY.ZZ).",
+				message  => "Version '$version' does not match CPAN format (X.YY or X.YY.ZZ).",
 			);
 		}
 	} else {
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'warning',
-			message  => 'Could not determine distribution version from main module.',
+			message  => 'Could not determine distribution version from any module.',
 		);
 	}
 
-	# --- Required release files -----------------------------------------------
-	for my $file (@EXPECTED_FILES) {
+	# Required release files.
+	for my $file (@REQUIRED_FILES) {
 		unless ($ctx->has_file($file)) {
-			push @findings, _finding(
+			push @findings, _f(
 				severity => 'error',
 				message  => "'$file' is missing from the distribution root.",
-				detail   => "CPAN indexers and users expect this file to be present.",
 			);
 		}
 	}
 
-	# --- Changes file has at least one entry ----------------------------------
+	# Changes file must have at least one version entry.
 	if ($ctx->has_file('Changes')) {
 		my $content = $ctx->slurp('Changes');
 		unless ($content =~ /^\d+\.\d+/m || $content =~ /^v\d+/m) {
-			push @findings, _finding(
+			push @findings, _f(
 				severity => 'warning',
-				message  => 'Changes file appears to have no version entries.',
+				message  => 'Changes file has no version entries.',
 				file     => 'Changes',
 			);
 		}
 	}
 
-	# --- MANIFEST is not stale (basic: file must exist, detail check skipped)
-	# Full stale-MANIFEST detection requires running 'make manifest' which is
-	# too invasive for a read-only check; flag it as info only.
+	# MANIFEST stale-check requires 'make manifest' -- too invasive; just advise.
 	if ($ctx->has_file('MANIFEST')) {
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'info',
-			message  => 'MANIFEST present -- run `make manifest` to verify it is not stale.',
+			message  => "MANIFEST present -- run 'make manifest' to verify it is not stale.",
 		);
 	}
 
-	unless (grep { $_->severity =~ /^(?:error|warning)$/ } @findings) {
-		push @findings, _finding(
+	# Emit a pass only when there are no errors or warnings.
+	my $has_problem = grep { $_->severity =~ /^(?:error|warning)$/ } @findings;
+	unless ($has_problem) {
+		push @findings, _f(
 			severity => 'pass',
 			message  => 'Distribution meets basic CPAN readiness requirements.',
 		);
@@ -105,16 +87,14 @@ sub check {
 # Private helpers
 # ---------------------------------------------------------------------------
 
-sub _finding {
+sub _f {
 	require App::Project::Doctor::Finding;
 	return App::Project::Doctor::Finding->new(check_name => 'CPAN Readiness', @_);
 }
 
-# Reads $VERSION from the main module (the one whose path matches the dist name).
 sub _read_version {
 	my $ctx = shift;
-	my $modules = $ctx->lib_modules;
-	for my $mod (@{$modules}) {
+	for my $mod (@{ $ctx->lib_modules }) {
 		my $content = eval { $ctx->slurp($mod) } // next;
 		if (my ($v) = $content =~ /^\s*our\s+\$VERSION\s*=\s*['"]?([\d._]+)['"]?/m) {
 			return $v;
@@ -129,34 +109,29 @@ __END__
 
 =head1 NAME
 
-App::Project::Doctor::Check::CpanReadiness - Check distribution is ready for CPAN upload
+App::Project::Doctor::Check::CpanReadiness - Pre-upload CPAN readiness check
 
 =head1 DESCRIPTION
 
-Performs a final pre-flight check covering the items that would cause a CPAN
-upload to fail or produce a poor user experience: version format, presence of
-C<Changes>, C<MANIFEST>, and C<README>, and basic C<Changes> content.
+Performs a final pre-flight sweep: version format, C<Changes>, C<MANIFEST>,
+C<README> presence, and basic C<Changes> content.
 
 =head3 MESSAGES
 
-  Code | Trigger                         | Resolution
+  Code | Trigger                          | Resolution
   -----|----------------------------------|-------------------------------------------
-  R001 | Version format invalid           | Change to X.YY or X.YY.ZZ format
-  R002 | Changes / MANIFEST / README missing | Create the missing file
-  R003 | Changes has no version entries   | Add a changelog entry for the current version
+  R001 | Version format invalid           | Use X.YY or X.YY.ZZ
+  R002 | Changes/MANIFEST/README missing  | Create the file
+  R003 | Changes has no version entries   | Add a changelog entry
 
 =head3 FORMAL SPECIFICATION
 
   check : Context -> [Finding]
-
   check ctx ==
     version_check ctx
-    ++ concat [file_check f | f <- EXPECTED_FILES]
-    ++ changes_entry_check ctx
-    where
-      version_check ctx  == if not VERSION_RE matches (read_version ctx) then [error] else []
-      file_check f       == if not exists f in ctx then [error] else []
-      changes_entry_check == if Changes has no version line then [warning] else []
+    ++ [file_check f | f <- REQUIRED_FILES]
+    ++ changes_check ctx
+    ++ (if no problems then [pass] else [])
 
 =head1 AUTHOR
 
