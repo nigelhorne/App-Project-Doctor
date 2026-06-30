@@ -4,25 +4,15 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
+use parent -norequire, 'App::Project::Doctor::Check::Base';
+
 use Carp qw(croak carp);
 use Readonly;
 
-with 'App::Project::Doctor::Check::Role';
-
 our $VERSION = '0.01';
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-Readonly::Array my @REQUIRED_META_FIELDS => qw(name version author abstract license);
-Readonly::Array my @META_FILES           => qw(META.json META.yml MYMETA.json MYMETA.yml);
-
-# ---------------------------------------------------------------------------
-# Role interface
-# ---------------------------------------------------------------------------
+Readonly::Array my @REQUIRED_FIELDS => qw(name version author abstract license);
+Readonly::Array my @META_FILES      => qw(META.json META.yml MYMETA.json MYMETA.yml);
 
 sub name        { 'META' }
 sub description { 'META.yml or META.json is present, parseable, and complete.' }
@@ -35,38 +25,38 @@ sub check {
 
 	my @findings;
 
-	# Look for a built META file; prefer .json over .yml.
 	my ($meta_file) = grep { $ctx->has_file($_) } @META_FILES;
 
 	unless ($meta_file) {
-		# META files are generated at build time, so their absence in a
-		# working tree is a warning, not an error.
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'warning',
-			message  => 'No META.{yml,json} found. Run Makefile.PL / dist.ini to generate one.',
-			detail   => 'CPAN indexers require META to discover the distribution name and version.',
+			message  => 'No META.{yml,json} -- run your builder to generate one.',
+			detail   => 'CPAN indexers require META to discover name and version.',
 		);
-		# Fall back to inspecting the builder file for completeness.
-		push @findings, $self->_check_builder($ctx);
+		# Fall back: at least confirm a builder file exists.
+		unless ($ctx->builder_file) {
+			push @findings, _f(
+				severity => 'error',
+				message  => 'No Makefile.PL, Build.PL, or dist.ini found.',
+			);
+		}
 		return @findings;
 	}
 
-	# Parse with CPAN::Meta.
-	my $meta_obj = _parse_meta($ctx->abs_path($meta_file));
-	unless ($meta_obj) {
-		push @findings, _finding(
+	require CPAN::Meta;
+	my $meta = eval { CPAN::Meta->load_file($ctx->abs_path($meta_file)) };
+	if ($@) {
+		return _f(
 			severity => 'error',
 			message  => "Failed to parse $meta_file -- file may be malformed.",
 			file     => $meta_file,
 		);
-		return @findings;
 	}
 
-	# Check required fields.
-	my %data = %{ $meta_obj->as_struct };
-	for my $field (@REQUIRED_META_FIELDS) {
+	my %data = %{ $meta->as_struct };
+	for my $field (@REQUIRED_FIELDS) {
 		next if defined $data{$field} && length $data{$field};
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'error',
 			message  => "META field '$field' is missing or empty in $meta_file.",
 			file     => $meta_file,
@@ -74,44 +64,18 @@ sub check {
 	}
 
 	unless (@findings) {
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'pass',
-			message  => "$meta_file is present and all required fields are populated.",
+			message  => "$meta_file is valid and all required fields are present.",
 		);
 	}
 
 	return @findings;
 }
 
-# ---------------------------------------------------------------------------
-# Private helpers
-# ---------------------------------------------------------------------------
-
-sub _finding {
+sub _f {
 	require App::Project::Doctor::Finding;
 	return App::Project::Doctor::Finding->new(check_name => 'META', @_);
-}
-
-sub _parse_meta {
-	my $path = shift;
-	require CPAN::Meta;
-	my $meta = eval { CPAN::Meta->load_file($path) };
-	carp "CPAN::Meta->load_file failed: $@" if $@;
-	return $meta;
-}
-
-# Inspect Makefile.PL / dist.ini as a proxy when no META is built yet.
-sub _check_builder {
-	my ($self, $ctx) = @_;
-	my @findings;
-	my $builder = $ctx->builder_file;
-	unless ($builder) {
-		push @findings, _finding(
-			severity => 'error',
-			message  => 'No Makefile.PL, Build.PL, or dist.ini found.',
-		);
-	}
-	return @findings;
 }
 
 1;
@@ -124,29 +88,26 @@ App::Project::Doctor::Check::Meta - Check META file presence and validity
 
 =head1 DESCRIPTION
 
-Verifies that at least one META file is present in the distribution and that
-all fields required by the CPAN Meta specification are populated.
-Uses L<CPAN::Meta> for parsing.
+Uses L<CPAN::Meta> to parse the distribution META file and verifies that all
+required fields (name, version, author, abstract, license) are present.
 
 =head3 MESSAGES
 
-  Code | Trigger                      | Resolution
-  -----|------------------------------|-------------------------------------------
-  M001 | No META.* file found         | Run Makefile.PL (or dist build) to generate
-  M002 | META file parse failure      | Correct malformed YAML/JSON by hand
-  M003 | Required META field missing  | Add field to Makefile.PL / dist.ini
+  Code | Trigger                     | Resolution
+  -----|-----------------------------|-----------------------------------------
+  M001 | No META.* file found        | Run builder to generate (make or dzil)
+  M002 | META parse failure          | Correct malformed YAML/JSON by hand
+  M003 | Required META field missing | Add field to Makefile.PL / dist.ini
 
 =head3 FORMAL SPECIFICATION
 
   check : Context -> [Finding]
-
   check ctx ==
-    let f = first META_FILE exists in ctx
-    in  if f = undef then [warning, builder_check ctx]
+    let f = first meta_file existing in ctx
+    in  if f = undef then [warning] ++ (if no builder then [error] else [])
         else let m = parse f
              in  if parse_fails then [error]
-                 else [error per missing field in REQUIRED_FIELDS]
-                      ++ if all_ok then [pass] else []
+                 else [error per missing field] ++ (if all ok then [pass] else [])
 
 =head1 AUTHOR
 

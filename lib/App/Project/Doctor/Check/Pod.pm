@@ -4,11 +4,9 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
-use Carp qw(croak carp);
+use parent -norequire, 'App::Project::Doctor::Check::Base';
 
-with 'App::Project::Doctor::Check::Role';
+use Carp qw(croak carp);
 
 our $VERSION = '0.01';
 
@@ -25,37 +23,38 @@ sub check {
 	my $modules = $ctx->lib_modules;
 
 	unless (@{$modules}) {
-		return _finding(
+		return _f(
 			severity => 'info',
-			message  => 'No .pm files found under lib/ -- nothing to check.',
+			message  => 'No .pm files under lib/ -- nothing to check.',
 		);
 	}
 
 	for my $mod (@{$modules}) {
-		my @errors = _check_pod($ctx->abs_path($mod));
-		for my $err (@errors) {
-			push @findings, _finding(
+		# Check for any POD at all.
+		my $content = eval { $ctx->slurp($mod) } // do { carp "Cannot slurp $mod: $@"; next };
+		unless ($content =~ /^=\w/m) {
+			push @findings, _f(
+				severity => 'error',
+				message  => "No POD found in $mod.",
+				file     => $mod,
+				fix      => _fix_scaffold_pod($ctx, $mod),
+			);
+			next;
+		}
+
+		# Validate existing POD.
+		for my $err (_check_pod($ctx->abs_path($mod))) {
+			push @findings, _f(
 				severity => 'error',
 				message  => "POD error in $mod: $err->{message}",
 				file     => $mod,
 				defined $err->{line} ? (line => $err->{line}) : (),
 			);
 		}
-
-		# Treat a module with no POD at all as an error.
-		my $content = $ctx->slurp($mod);
-		unless ($content =~ /^=\w/m) {
-			push @findings, _finding(
-				severity => 'error',
-				message  => "No POD found in $mod.",
-				file     => $mod,
-				fix      => _fix_scaffold_pod($ctx, $mod),
-			);
-		}
 	}
 
 	unless (@findings) {
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'pass',
 			message  => sprintf('%d module(s) checked -- all have valid POD.', scalar @{$modules}),
 		);
@@ -68,29 +67,25 @@ sub check {
 # Private helpers
 # ---------------------------------------------------------------------------
 
-sub _finding {
+sub _f {
 	require App::Project::Doctor::Finding;
 	return App::Project::Doctor::Finding->new(check_name => 'POD', @_);
 }
 
-# Run Pod::Checker and return a list of { message, line } hashrefs.
 sub _check_pod {
 	my $abs_path = shift;
 	require Pod::Checker;
 
-	my @errors;
+	my $captured = '';
+	open my $out_fh, '>', \$captured;
 	my $checker = Pod::Checker->new;
-
-	# Pod::Checker writes to a filehandle; capture via a tied scalar.
-	open my $out_fh, '>', \my $captured;
-	$checker->parse_file($abs_path);
+	$checker->parse_from_file($abs_path, $out_fh);
 	close $out_fh;
 
-	my $num_errors = $checker->num_errors;
-	return () if $num_errors == 0;
+	return () if ($checker->num_errors // 0) == 0;
 
-	# Parse the captured output for structured data.
-	for my $line (split /\n/, ($captured // '')) {
+	my @errors;
+	for my $line (split /\n/, $captured) {
 		next unless $line =~ /\S/;
 		my ($lineno) = $line =~ /line\s+(\d+)/i;
 		push @errors, {
@@ -98,19 +93,14 @@ sub _check_pod {
 			defined $lineno ? (line => $lineno) : (),
 		};
 	}
-
 	return @errors;
 }
 
-# Returns a fix coderef that appends a minimal POD skeleton to the module.
 sub _fix_scaffold_pod {
 	my ($ctx, $rel_path) = @_;
 	return sub {
 		my $abs = $ctx->abs_path($rel_path);
-
-		# Derive package name from path for use in generated POD.
-		(my $pkg = $rel_path) =~ s{lib/}{}; $pkg =~ s{/}{::}g; $pkg =~ s{\.pm$}{};
-
+		(my $pkg = $rel_path) =~ s{^lib/}{}; $pkg =~ s{/}{::}g; $pkg =~ s{\.pm$}{};
 		open my $fh, '>>', $abs;
 		print {$fh} <<"END_POD";
 
@@ -156,26 +146,24 @@ App::Project::Doctor::Check::Pod - Check POD presence and validity in all module
 
 =head1 DESCRIPTION
 
-Uses L<Pod::Checker> to validate every C<.pm> file found under C<lib/>.
-Also reports modules that have no POD at all.  A fix is offered that appends
-a minimal POD skeleton so the author can fill it in.
+Uses L<Pod::Checker> to validate every C<.pm> under C<lib/>.  Modules with no
+POD at all get a fixable finding that appends a minimal skeleton.
 
 =head3 MESSAGES
 
-  Code | Trigger                    | Resolution
-  -----|----------------------------|----------------------------------------------
-  P001 | No POD in a .pm file       | Fix appends a skeleton; fill in manually
-  P002 | Pod::Checker reports error  | Correct the malformed POD by hand
+  Code | Trigger                  | Resolution
+  -----|--------------------------|-----------------------------------------------
+  P001 | No POD in a .pm file     | Fix appends a skeleton; fill in by hand
+  P002 | Pod::Checker error       | Correct the malformed POD
 
 =head3 FORMAL SPECIFICATION
 
   check : Context -> [Finding]
-
   check ctx ==
-    let mods = lib_modules ctx
-    in  concat [ check_one m | m <- mods ]
-        where check_one m ==
-                pod_errors m ++ (if no_pod m then [error + fix] else [])
+    concat [ check_one m | m <- lib_modules ctx ]
+    where check_one m ==
+            (if no_pod m then [error+fix] else [])
+            ++ pod_errors m
 
 =head1 AUTHOR
 

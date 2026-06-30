@@ -4,11 +4,10 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
 use Carp qw(croak carp);
 use Readonly;
 use Scalar::Util qw(looks_like_number);
+use Params::Validate qw(:all);
 
 our $VERSION = '0.01';
 
@@ -17,59 +16,54 @@ our $VERSION = '0.01';
 # ---------------------------------------------------------------------------
 
 Readonly::Hash my %SEVERITY_ICON => (
-	error   => 'X',
-	warning => '!',
-	pass    => 'v',
-	info    => 'i',
+	error   => '[X]',
+	warning => '[!]',
+	pass    => '[v]',
+	info    => '[i]',
 );
 
-Readonly::Array my @VALID_SEVERITIES => qw(error warning pass info);
+Readonly::Hash my %VALID_SEVERITY => map { $_ => 1 } qw(error warning pass info);
 
 # ---------------------------------------------------------------------------
-# Attributes
+# Constructor
 # ---------------------------------------------------------------------------
 
-has severity => (
-	is      => 'ro',
-	isa     => sub {
-		my $s = $_[0];
-		croak "Invalid severity '$s'"
-			unless grep { $_ eq $s } @VALID_SEVERITIES;
-	},
-	default => 'info',
-);
+sub new {
+	my $class = shift;
+	my %args  = validate(@_, {
+		severity   => { type => SCALAR,   default  => 'info' },
+		message    => { type => SCALAR },
+		detail     => { type => SCALAR,   default  => '' },
+		fix        => { type => CODEREF,  optional => 1 },
+		check_name => { type => SCALAR,   default  => 'Unknown' },
+		file       => { type => SCALAR,   default  => '' },
+		line       => { type => SCALAR,   optional => 1,
+		                callbacks => { 'positive integer' => sub {
+		                    !defined $_[0] || (looks_like_number($_[0]) && $_[0] >= 1)
+		                }}},
+	});
 
-has message => (
-	is       => 'ro',
-	isa      => sub { croak 'message must be a non-empty string' unless length $_[0] },
-	required => 1,
-);
+	croak "Invalid severity '$args{severity}'"
+		unless $VALID_SEVERITY{ $args{severity} };
 
-has detail => (
-	is      => 'ro',
-	default => '',
-);
+	croak 'message must be a non-empty string'
+		unless defined $args{message} && length $args{message};
 
-# Coderef ($context) -> 1 on success, croaks on failure.
-has fix => (
-	is        => 'ro',
-	predicate => 'has_fix',
-);
+	return bless \%args, $class;
+}
 
-has check_name => (
-	is      => 'ro',
-	default => 'Unknown',
-);
+# ---------------------------------------------------------------------------
+# Accessors
+# ---------------------------------------------------------------------------
 
-has file => (
-	is      => 'ro',
-	default => '',
-);
-
-has line => (
-	is  => 'ro',
-	isa => sub { croak 'line must be a positive integer' if defined $_[0] && (!looks_like_number($_[0]) || $_[0] < 1) },
-);
+sub severity   { $_[0]->{severity}   }
+sub message    { $_[0]->{message}    }
+sub detail     { $_[0]->{detail}     }
+sub fix        { $_[0]->{fix}        }
+sub check_name { $_[0]->{check_name} }
+sub file       { $_[0]->{file}       }
+sub line       { $_[0]->{line}       }
+sub has_fix    { defined $_[0]->{fix} }
 
 # ---------------------------------------------------------------------------
 # Public methods
@@ -77,7 +71,7 @@ has line => (
 
 =head2 is_fixable
 
-Returns true when this finding carries an automated fix coderef.
+Returns 1 when this finding carries an automated fix coderef, 0 otherwise.
 
 =cut
 
@@ -88,32 +82,33 @@ sub is_fixable {
 
 =head2 icon
 
-Returns the single-ASCII-character status icon for this finding's severity.
+Returns the bracketed ASCII status icon for this finding's severity.
 
 =cut
 
 sub icon {
 	my $self = shift;
-	return $SEVERITY_ICON{ $self->severity } // '?';
+	return $SEVERITY_ICON{ $self->severity } // '[?]';
 }
 
 =head2 to_hash
 
-Serialises the finding to a plain hash suitable for JSON encoding.
+Serialises the finding to a plain hashref for JSON encoding.
 The C<fix> coderef is omitted.
 
 =cut
 
 sub to_hash {
 	my $self = shift;
-	return {
+	my %h = (
 		severity   => $self->severity,
 		message    => $self->message,
 		detail     => $self->detail,
 		check_name => $self->check_name,
 		file       => $self->file,
-		defined $self->line ? (line => $self->line) : (),
-	};
+	);
+	$h{line} = $self->line if defined $self->line;
+	return \%h;
 }
 
 1;
@@ -142,7 +137,7 @@ App::Project::Doctor::Finding - A single diagnostic finding produced by a check
       },
   );
 
-  printf "[%s] %s\n", $f->icon, $f->message;
+  printf "%s %s\n", $f->icon, $f->message;
   $f->fix->($ctx) if $f->is_fixable;
 
 =head1 DESCRIPTION
@@ -152,61 +147,63 @@ C<App::Project::Doctor::Check::*> plugin.  Each finding carries a severity
 level, a human-readable message, an optional file/line location, and an
 optional automated fix coderef.
 
-=head1 ATTRIBUTES
+=head1 CONSTRUCTOR
 
-=head2 severity
+=head2 new( %args )
 
-One of C<error>, C<warning>, C<pass>, or C<info>.  Defaults to C<info>.
+  my $finding = App::Project::Doctor::Finding->new(
+      severity   => 'error',   # required: error|warning|pass|info
+      message    => 'text',    # required non-empty string
+      detail     => '...',     # optional extended explanation
+      fix        => sub {...}, # optional coderef ($ctx) -> 1
+      check_name => 'Tests',   # optional, default 'Unknown'
+      file       => 'lib/F.pm',# optional
+      line       => 42,        # optional positive integer
+  );
 
-=head2 message
+Croaks on invalid severity or empty message.
 
-Mandatory non-empty string.  Describes what was found.
+=head3 API SPECIFICATION
 
-=head2 detail
+=head4 Input
 
-Optional extended explanation (multi-line is fine).
+  severity   : 'error' | 'warning' | 'pass' | 'info'   default 'info'
+  message    : non-empty String
+  detail     : String                                    default ''
+  fix        : CodeRef ($ctx) -> 1                       optional
+  check_name : String                                    default 'Unknown'
+  file       : String                                    default ''
+  line       : positive Integer                          optional
 
-=head2 fix
+=head4 Output
 
-Optional coderef C<($context) -E<gt> 1>.  When present, the finding is
-considered fixable and the Fixer will offer to call it.
+Blessed hashref of type C<App::Project::Doctor::Finding>.
 
-=head2 check_name
+=head1 ACCESSORS
 
-String identifying which C<Check::*> module produced this finding.
-
-=head2 file
-
-Path (relative to distro root) of the file the finding relates to, if any.
-
-=head2 line
-
-1-based line number within C<file>, if applicable.
+C<severity>, C<message>, C<detail>, C<fix>, C<check_name>, C<file>, C<line>,
+C<has_fix> -- all read-only.
 
 =head1 METHODS
 
 =head2 is_fixable
 
-  my $bool = $finding->is_fixable;
-
-Returns 1 when a C<fix> coderef is present, 0 otherwise.
+Returns 1 when C<fix> is defined, 0 otherwise.
 
 =head3 API SPECIFICATION
 
 =head4 Input
 
-None (instance method, no arguments).
+None.
 
 =head4 Output
 
-Boolean integer: 1 or 0.
+Integer 1 or 0.
 
 =head2 icon
 
-  my $char = $finding->icon;
-
-Returns a single ASCII character representing the severity:
-C<v> (pass), C<X> (error), C<!> (warning), C<i> (info).
+Returns the severity icon string: C<[v]> pass, C<[X]> error, C<[!]> warning,
+C<[i]> info.
 
 =head3 API SPECIFICATION
 
@@ -216,14 +213,11 @@ None.
 
 =head4 Output
 
-Single ASCII character string.
+String.
 
 =head2 to_hash
 
-  my $href = $finding->to_hash;
-
-Returns a plain hashref for JSON/TAP serialisation.  The C<fix> coderef is
-excluded.
+Returns a plain hashref suitable for JSON encoding.  C<fix> is excluded.
 
 =head3 API SPECIFICATION
 
@@ -233,13 +227,12 @@ None.
 
 =head4 Output
 
-Hashref with keys: C<severity>, C<message>, C<detail>, C<check_name>,
-C<file>, and (if set) C<line>.
+HashRef with keys: severity, message, detail, check_name, file, line (if set).
 
 =head3 MESSAGES
 
-  Code | Trigger | Resolution
-  -----|---------|----------
+  Code | Trigger                       | Resolution
+  -----|-------------------------------|----------------------------
   (none currently defined)
 
 =head3 FORMAL SPECIFICATION

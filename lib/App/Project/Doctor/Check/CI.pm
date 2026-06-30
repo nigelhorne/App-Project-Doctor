@@ -4,16 +4,22 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
-use Carp qw(croak carp);
+use parent -norequire, 'App::Project::Doctor::Check::Base';
 
-with 'App::Project::Doctor::Check::Role';
+use Carp qw(croak);
+use Readonly;
 
 our $VERSION = '0.01';
 
+Readonly::Hash my %CI_PATHS => (
+	'GitHub Actions' => '.github/workflows',
+	'Travis CI'      => '.travis.yml',
+	'CircleCI'       => '.circleci/config.yml',
+	'AppVeyor'       => 'appveyor.yml',
+);
+
 sub name        { 'CI' }
-sub description { 'Continuous integration configuration is present.' }
+sub description { 'At least one CI configuration is present.' }
 sub can_fix     { 1 }
 sub order       { 20 }
 
@@ -21,42 +27,28 @@ sub check {
 	my ($self, $ctx) = @_;
 	croak 'check requires an App::Project::Doctor::Context' unless ref $ctx;
 
-	# Detect any supported CI system before reporting failure.
-	# GitHub Actions is checked in depth by Check::GitHubActions.
-	my %ci_paths = (
-		'GitHub Actions' => '.github/workflows',
-		'Travis CI'      => '.travis.yml',
-		'Circle CI'      => '.circleci/config.yml',
-		'AppVeyor'       => 'appveyor.yml',
-	);
-
-	my @found = grep { $ctx->has_file($_) } values %ci_paths;
-
-	if (@found) {
-		return _finding(
-			severity => 'pass',
-			message  => 'CI configuration found.',
-		);
+	for my $label (sort keys %CI_PATHS) {
+		if ($ctx->has_file($CI_PATHS{$label})) {
+			return _f(
+				severity => 'pass',
+				message  => "CI configuration found ($label).",
+			);
+		}
 	}
 
-	return _finding(
+	return _f(
 		severity => 'error',
-		message  => 'No CI configuration found (GitHub Actions, Travis, CircleCI, or AppVeyor).',
-		fix      => _fix_create_workflow($ctx),
+		message  => 'No CI configuration found (GitHub Actions, Travis, CircleCI, AppVeyor).',
+		fix      => sub {
+			require App::GHGen;
+			App::GHGen->new(root => $_[0]->root)->generate;
+		},
 	);
 }
 
-sub _finding {
+sub _f {
 	require App::Project::Doctor::Finding;
 	return App::Project::Doctor::Finding->new(check_name => 'CI', @_);
-}
-
-sub _fix_create_workflow {
-	my $ctx = shift;
-	return sub {
-		require App::GHGen;
-		App::GHGen->new(root => $ctx->root)->generate;
-	};
 }
 
 1;
@@ -69,20 +61,19 @@ App::Project::Doctor::Check::CI - Check that a CI configuration exists
 
 =head1 DESCRIPTION
 
-Verifies that at least one supported CI configuration file is present.
-Detailed validation of GitHub Actions workflow syntax is handled by
-L<App::Project::Doctor::Check::GitHubActions>.
+Reports an error when no supported CI configuration is found.  Detailed
+GitHub Actions validation is handled by L<App::Project::Doctor::Check::GitHubActions>.
 
 =head3 MESSAGES
 
-  Code | Trigger              | Resolution
-  -----|----------------------|----------------------------------
-  C001 | No CI config found   | Fix creates .github/workflows/ via App::GHGen
+  Code | Trigger           | Resolution
+  -----|-------------------|------------------------------------
+  C001 | No CI config      | Fix generates a workflow via App::GHGen
 
 =head3 FORMAL SPECIFICATION
 
   check : Context -> [Finding]
-  check ctx == if (exists any ci_path in ctx) then [pass] else [error + fix]
+  check ctx == if exists any CI_PATH in ctx then [pass] else [error+fix]
 
 =head1 AUTHOR
 

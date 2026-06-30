@@ -4,33 +4,23 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
+use parent -norequire, 'App::Project::Doctor::Check::Base';
+
 use Carp qw(croak carp);
 use Readonly;
 
-with 'App::Project::Doctor::Check::Role';
-
 our $VERSION = '0.01';
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-# Core modules that do not need to appear in prerequisites.
-Readonly::Hash my %CORE_MODULES => map { $_ => 1 } qw(
-	strict warnings autodie Carp Scalar::Util List::Util
-	File::Spec File::Find File::Path File::Temp
-	Data::Dumper POSIX Storable Exporter base parent
-	overload constant vars utf8 feature
+# Modules that ship with Perl core and need no prereq declaration.
+Readonly::Hash my %CORE => map { $_ => 1 } qw(
+	strict warnings autodie Carp Scalar::Util List::Util POSIX Storable
+	File::Spec File::Find File::Path File::Temp File::Basename
+	Data::Dumper Exporter base parent overload constant vars utf8 feature
+	Getopt::Long Pod::Usage Params::Validate Params::Get Readonly
 );
 
-# ---------------------------------------------------------------------------
-# Role interface
-# ---------------------------------------------------------------------------
-
 sub name        { 'Dependencies' }
-sub description { 'All used modules are declared in build prerequisites.' }
+sub description { 'All used modules are declared as build prerequisites.' }
 sub can_fix     { 1 }
 sub order       { 50 }
 
@@ -40,34 +30,29 @@ sub check {
 
 	my @findings;
 
-	# Collect all 'use' / 'require' statements from Perl source files.
-	my $used = _collect_used_modules($ctx);
-
-	# Collect declared prerequisites from the builder file.
-	my $declared = _collect_declared_modules($ctx);
-
+	my $declared = _collect_declared($ctx);
 	unless (defined $declared) {
-		push @findings, _finding(
+		return _f(
 			severity => 'warning',
-			message  => 'No Makefile.PL, Build.PL, or cpanfile found -- cannot check prerequisites.',
+			message  => 'No Makefile.PL, Build.PL, or cpanfile -- cannot check prerequisites.',
 		);
-		return @findings;
 	}
 
-	# Report modules used but not declared (excluding core).
+	my $used = _collect_used($ctx);
+
 	for my $mod (sort keys %{$used}) {
-		next if $CORE_MODULES{$mod};
+		next if $CORE{$mod};
 		next if $declared->{$mod};
-		push @findings, _finding(
-			severity   => 'error',
-			message    => "Module '$mod' is used in source but not declared as a prerequisite.",
-			detail     => "Found in: " . join(', ', @{ $used->{$mod} }),
-			fix        => _fix_add_prereq($ctx, $mod),
+		push @findings, _f(
+			severity => 'error',
+			message  => "Module '$mod' used in source but not declared as a prerequisite.",
+			detail   => 'Found in: ' . join(', ', @{ $used->{$mod} }),
+			fix      => _fix_add_prereq($ctx, $mod),
 		);
 	}
 
 	unless (@findings) {
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'pass',
 			message  => 'All non-core used modules are declared as prerequisites.',
 		);
@@ -80,13 +65,12 @@ sub check {
 # Private helpers
 # ---------------------------------------------------------------------------
 
-sub _finding {
+sub _f {
 	require App::Project::Doctor::Finding;
 	return App::Project::Doctor::Finding->new(check_name => 'Dependencies', @_);
 }
 
-# Scans all Perl files and returns { ModuleName => [$file1, $file2, ...] }.
-sub _collect_used_modules {
+sub _collect_used {
 	my $ctx = shift;
 	my %used;
 	my $files = $ctx->perl_files('lib', 'script', 'bin');
@@ -94,16 +78,14 @@ sub _collect_used_modules {
 		my $content = eval { $ctx->slurp($rel) } // next;
 		while ($content =~ /^\s*(?:use|require)\s+([\w:]+)/mg) {
 			my $mod = $1;
-			next if $mod =~ /^\d/;    # version number, not a module
+			next if $mod =~ /^\d/;    # bare version number
 			push @{ $used{$mod} }, $rel;
 		}
 	}
 	return \%used;
 }
 
-# Parses Makefile.PL or cpanfile and returns { ModuleName => version }.
-# Delegates to App::makefilepl2cpanfile for Makefile.PL parsing.
-sub _collect_declared_modules {
+sub _collect_declared {
 	my $ctx = shift;
 
 	if ($ctx->has_file('cpanfile')) {
@@ -112,10 +94,8 @@ sub _collect_declared_modules {
 
 	if ($ctx->has_file('Makefile.PL')) {
 		require App::makefilepl2cpanfile;
-		my $data = eval {
-			App::makefilepl2cpanfile->new->parse($ctx->abs_path('Makefile.PL'))
-		};
-		carp "App::makefilepl2cpanfile parse failed: $@" if $@;
+		my $data = eval { App::makefilepl2cpanfile->new->parse($ctx->abs_path('Makefile.PL')) };
+		carp "App::makefilepl2cpanfile failed: $@" if $@;
 		return $data;
 	}
 
@@ -127,15 +107,12 @@ sub _parse_cpanfile {
 	my %mods;
 	open my $fh, '<', $path;
 	while (<$fh>) {
-		if (/^requires\s+['"]?([\w:]+)['"]?/) {
-			$mods{$1} = 0;
-		}
+		$mods{$1} = 0 if /^requires\s+['"]?([\w:]+)['"]?/;
 	}
 	close $fh;
 	return \%mods;
 }
 
-# Fix: append a 'requires' line to cpanfile or Makefile.PL.
 sub _fix_add_prereq {
 	my ($ctx, $mod) = @_;
 	return sub {
@@ -143,8 +120,8 @@ sub _fix_add_prereq {
 			open my $fh, '>>', $ctx->abs_path('cpanfile');
 			print {$fh} "requires '$mod';\n";
 			close $fh;
-		} elsif ($ctx->has_file('Makefile.PL')) {
-			carp "Auto-fix for Makefile.PL not yet implemented; add '$mod' manually.";
+		} else {
+			carp "Auto-fix for Makefile.PL not implemented; add '$mod' manually.";
 		}
 	};
 }
@@ -155,33 +132,30 @@ __END__
 
 =head1 NAME
 
-App::Project::Doctor::Check::Dependencies - Check that all used modules are declared
+App::Project::Doctor::Check::Dependencies - Check that used modules are declared
 
 =head1 DESCRIPTION
 
-Scans every C<.pm>, C<.pl>, and script file for C<use> and C<require>
-statements, then compares the list against the declared prerequisites in
-C<Makefile.PL> or C<cpanfile> (via L<App::makefilepl2cpanfile>).
-Core modules are excluded automatically.
+Scans all C<.pm>, C<.pl>, and script files for C<use>/C<require> statements
+and compares against C<cpanfile> or C<Makefile.PL> prerequisites
+(via L<App::makefilepl2cpanfile>).  Core modules are excluded.
 
 =head3 MESSAGES
 
-  Code | Trigger                       | Resolution
-  -----|-------------------------------|-------------------------------------------
-  D001 | No builder file found         | Add a Makefile.PL or cpanfile
-  D002 | Module used but not declared  | Fix appends 'requires' to cpanfile
+  Code | Trigger                      | Resolution
+  -----|------------------------------|-------------------------------------------
+  D001 | No builder or cpanfile found | Add a Makefile.PL or cpanfile
+  D002 | Module used but not declared | Fix appends a 'requires' line to cpanfile
 
 =head3 FORMAL SPECIFICATION
 
-  check : Context -> [Finding]
-
-  used     = { mod | (use mod) in source_files ctx }
+  used     = { mod | (use|require mod) in source_files ctx }
   declared = parse_prereqs (builder_file ctx)
-  missing  = used \\ (declared union CORE_MODULES)
+  missing  = used \\ (declared union CORE)
 
   check ctx ==
     if declared = undef then [warning]
-    else [error + fix per m in missing] ++ (if missing = {} then [pass] else [])
+    else [error+fix per m in missing] ++ (if missing = {} then [pass] else [])
 
 =head1 AUTHOR
 

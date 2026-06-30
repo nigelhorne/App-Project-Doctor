@@ -4,16 +4,17 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
-use Carp qw(croak carp);
+use parent -norequire, 'App::Project::Doctor::Check::Base';
 
-with 'App::Project::Doctor::Check::Role';
+use Carp qw(croak carp);
+use Readonly;
 
 our $VERSION = '0.01';
 
+Readonly::Scalar my $WORKFLOW_DIR => '.github/workflows';
+
 sub name        { 'GitHub Actions' }
-sub description { 'Workflow files are valid and follow best practices.' }
+sub description { 'Workflow files are present and lint cleanly.' }
 sub can_fix     { 1 }
 sub order       { 25 }
 
@@ -23,32 +24,29 @@ sub check {
 
 	my @findings;
 
-	my $workflow_dir = '.github/workflows';
-	unless ($ctx->has_file($workflow_dir)) {
-		# No workflows at all -- CI check already covers the error case,
-		# so here we just emit a pass-through info.
-		return _finding(
+	# No .github/workflows/ -- CI check covers the error; emit info only.
+	unless ($ctx->has_file($WORKFLOW_DIR)) {
+		return _f(
 			severity => 'info',
-			message  => 'No .github/workflows/ directory -- skipping GitHub Actions validation.',
+			message  => 'No .github/workflows/ -- skipping GitHub Actions validation.',
 		);
 	}
 
-	my $workflow_files = $ctx->find_files($workflow_dir, qr/\.ya?ml$/i);
+	my $workflow_files = $ctx->find_files($WORKFLOW_DIR, qr/\.ya?ml$/i);
 
 	unless (@{$workflow_files}) {
-		push @findings, _finding(
+		return _f(
 			severity => 'warning',
-			message  => '.github/workflows/ exists but contains no YAML workflow files.',
+			message  => '.github/workflows/ exists but contains no YAML files.',
 			fix      => _fix_generate($ctx),
 		);
-		return @findings;
 	}
 
 	# Delegate syntax validation to App::Workflow::Lint.
 	for my $wf (@{$workflow_files}) {
-		my @lint_errors = _lint_workflow($ctx->abs_path($wf));
-		for my $err (@lint_errors) {
-			push @findings, _finding(
+		my @errors = _lint_workflow($ctx->abs_path($wf));
+		for my $err (@errors) {
+			push @findings, _f(
 				severity => 'error',
 				message  => "Workflow '$wf': $err->{message}",
 				file     => $wf,
@@ -58,7 +56,7 @@ sub check {
 	}
 
 	unless (@findings) {
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'pass',
 			message  => sprintf('%d workflow file(s) validated OK.', scalar @{$workflow_files}),
 		);
@@ -71,25 +69,21 @@ sub check {
 # Private helpers
 # ---------------------------------------------------------------------------
 
-sub _finding {
+sub _f {
 	require App::Project::Doctor::Finding;
 	return App::Project::Doctor::Finding->new(check_name => 'GitHub Actions', @_);
 }
 
-# Calls App::Workflow::Lint and normalises its findings into a plain list of
-# hashrefs { message => $str, line => $n|undef }.
 sub _lint_workflow {
 	my $abs_path = shift;
 	require App::Workflow::Lint;
-	my $linter   = App::Workflow::Lint->new;
-	my @errors   = $linter->lint($abs_path);
-	# Normalise -- actual return shape depends on App::Workflow::Lint's API;
-	# adjust the mapping below to match that module's real interface.
+	my $linter = App::Workflow::Lint->new;
+	my @raw    = $linter->lint($abs_path);
 	return map {
 		ref $_ eq 'HASH'
 			? { message => $_->{message} // "$_", line => $_->{line} }
 			: { message => "$_" }
-	} @errors;
+	} @raw;
 }
 
 sub _fix_generate {
@@ -106,30 +100,28 @@ __END__
 
 =head1 NAME
 
-App::Project::Doctor::Check::GitHubActions - Validate GitHub Actions workflow files
+App::Project::Doctor::Check::GitHubActions - Validate GitHub Actions workflows
 
 =head1 DESCRIPTION
 
-Uses L<App::Workflow::Lint> to validate every C<.yml>/C<.yaml> file found
-under C<.github/workflows/>.  When no workflow exists, a fix via
-L<App::GHGen> is offered.
+Uses L<App::Workflow::Lint> to validate every C<.yml>/C<.yaml> file under
+C<.github/workflows/>.  A fix via L<App::GHGen> is offered when no files exist.
 
 =head3 MESSAGES
 
-  Code | Trigger                          | Resolution
-  -----|----------------------------------|-------------------------------------
-  G001 | workflows/ has no YAML files     | Fix generates a workflow via App::GHGen
-  G002 | Lint error in a workflow file    | Edit the file to fix the syntax error
+  Code | Trigger                       | Resolution
+  -----|-------------------------------|-------------------------------------
+  G001 | workflows/ has no YAML files  | Fix generates a workflow via App::GHGen
+  G002 | Lint error in a workflow file | Edit the file to correct syntax
 
 =head3 FORMAL SPECIFICATION
 
   check : Context -> [Finding]
-
   check ctx ==
-    if not exists ".github/workflows" in ctx then [info]
-    else if |workflow_files ctx| = 0         then [warning + fix]
-    else union { lint_file f | f <- workflow_files ctx }
-         where lint_file f == if lint_ok f then [] else [error per violation]
+    if not exists WORKFLOW_DIR then [info]
+    else if |workflow_files| = 0 then [warning+fix]
+    else concat { lint_errors f | f <- workflow_files }
+         ++ (if all clean then [pass] else [])
 
 =head1 AUTHOR
 

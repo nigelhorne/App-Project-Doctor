@@ -4,32 +4,21 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Moo;
-use namespace::autoclean;
+use parent -norequire, 'App::Project::Doctor::Check::Base';
+
 use Carp qw(croak carp);
 use Readonly;
 
-with 'App::Project::Doctor::Check::Role';
-
 our $VERSION = '0.01';
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-# Patterns that indicate hardcoded credentials.
 Readonly::Array my @SECRET_PATTERNS => (
 	qr/(?:password|passwd|secret|api_?key|token)\s*=\s*['"][^'"]{4,}['"]/i,
 	qr/-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
-	qr/(?:AKIA|ASIA)[A-Z0-9]{16}/,    # AWS access key prefix
+	qr/(?:AKIA|ASIA)[A-Z0-9]{16}/,
 );
 
-# ---------------------------------------------------------------------------
-# Role interface
-# ---------------------------------------------------------------------------
-
 sub name        { 'Security' }
-sub description { 'All modules use strict/warnings; no hardcoded credentials.' }
+sub description { 'All modules declare strict/warnings; no hardcoded credentials.' }
 sub can_fix     { 1 }
 sub order       { 60 }
 
@@ -41,49 +30,48 @@ sub check {
 	my $files = $ctx->perl_files('lib', 'script', 'bin');
 
 	for my $rel (@{$files}) {
-		my $content = eval { $ctx->slurp($rel) } // next;
+		my $content = eval { $ctx->slurp($rel) } // do { carp "Cannot slurp $rel"; next };
 
-		# --- strict / warnings -----------------------------------------------
-		# Only flag .pm files and scripts; .t files are exempt.
+		# strict / warnings -- skip .t files (they inherit from test harness).
 		unless ($rel =~ /\.t$/) {
 			unless ($content =~ /^\s*use\s+strict\b/m) {
-				push @findings, _finding(
+				push @findings, _f(
 					severity => 'error',
 					message  => "Missing 'use strict' in $rel.",
 					file     => $rel,
-					fix      => _fix_add_pragma($ctx, $rel, 'strict'),
+					fix      => _fix_pragma($ctx, $rel, 'strict'),
 				);
 			}
 			unless ($content =~ /^\s*use\s+warnings\b/m) {
-				push @findings, _finding(
+				push @findings, _f(
 					severity => 'error',
 					message  => "Missing 'use warnings' in $rel.",
 					file     => $rel,
-					fix      => _fix_add_pragma($ctx, $rel, 'warnings'),
+					fix      => _fix_pragma($ctx, $rel, 'warnings'),
 				);
 			}
 		}
 
-		# --- hardcoded credentials -------------------------------------------
+		# Credential scan.
 		my @lines = split /\n/, $content;
 		for my $i (0 .. $#lines) {
 			for my $pat (@SECRET_PATTERNS) {
 				if ($lines[$i] =~ $pat) {
-					push @findings, _finding(
+					push @findings, _f(
 						severity => 'error',
 						message  => "Possible hardcoded credential in $rel at line " . ($i + 1) . '.',
 						file     => $rel,
 						line     => $i + 1,
 						detail   => 'Move secrets to environment variables or a config file.',
 					);
-					last;    # one finding per line is enough
+					last;
 				}
 			}
 		}
 	}
 
 	unless (@findings) {
-		push @findings, _finding(
+		push @findings, _f(
 			severity => 'pass',
 			message  => 'All checked files use strict/warnings; no credential patterns found.',
 		);
@@ -96,13 +84,12 @@ sub check {
 # Private helpers
 # ---------------------------------------------------------------------------
 
-sub _finding {
+sub _f {
 	require App::Project::Doctor::Finding;
 	return App::Project::Doctor::Finding->new(check_name => 'Security', @_);
 }
 
-# Prepends 'use strict;' or 'use warnings;' after the package declaration.
-sub _fix_add_pragma {
+sub _fix_pragma {
 	my ($ctx, $rel, $pragma) = @_;
 	return sub {
 		my $abs = $ctx->abs_path($rel);
@@ -110,16 +97,15 @@ sub _fix_add_pragma {
 		my @lines = <$fh>;
 		close $fh;
 
-		# Insert after the first 'package' line, or at the top if none.
-		my $insert_after = 0;
+		# Insert after the first 'package' declaration, or at line 0.
+		my $insert_at = 0;
 		for my $i (0 .. $#lines) {
 			if ($lines[$i] =~ /^\s*package\s+\S+/) {
-				$insert_after = $i + 1;
+				$insert_at = $i + 1;
 				last;
 			}
 		}
-
-		splice @lines, $insert_after, 0, "use $pragma;\n";
+		splice @lines, $insert_at, 0, "use $pragma;\n";
 
 		open my $out, '>', $abs;
 		print {$out} @lines;
@@ -137,45 +123,35 @@ App::Project::Doctor::Check::Security - Check for missing pragmas and hardcoded 
 
 =head1 DESCRIPTION
 
-Performs two security checks across all Perl source files:
+Two security checks across all Perl source files:
 
 =over 4
 
-=item 1.
+=item 1. C<use strict> and C<use warnings> present in every C<.pm> and script.
 
-Verifies that C<use strict> and C<use warnings> are present in every C<.pm>
-and script file.
-
-=item 2.
-
-Scans for common hardcoded credential patterns (passwords, API keys, AWS
-access keys, private key headers).
+=item 2. Scan for hardcoded credential patterns (passwords, API keys, AWS
+key prefixes, PEM private key headers).
 
 =back
 
-Fixes for missing pragmas are offered; credential findings must be resolved
-manually.
+Pragma fixes are automated; credential findings require manual resolution.
 
 =head3 MESSAGES
 
-  Code | Trigger                       | Resolution
-  -----|-------------------------------|-------------------------------------------
-  S001 | Missing 'use strict'          | Fix inserts pragma after package declaration
-  S002 | Missing 'use warnings'        | Fix inserts pragma after package declaration
-  S003 | Possible hardcoded credential | Move to env var / config; manual fix required
+  Code | Trigger                      | Resolution
+  -----|------------------------------|-------------------------------------------
+  S001 | Missing 'use strict'         | Fix inserts pragma after package declaration
+  S002 | Missing 'use warnings'       | Fix inserts pragma after package declaration
+  S003 | Possible hardcoded secret    | Move to env var / external config
 
 =head3 FORMAL SPECIFICATION
 
   check : Context -> [Finding]
-
   check ctx ==
     concat [ check_file f | f <- perl_files ctx ]
     where
       check_file f ==
         strict_check f ++ warnings_check f ++ credential_check f
-      strict_check f    == if not (use strict in f)    then [error+fix] else []
-      warnings_check f  == if not (use warnings in f)  then [error+fix] else []
-      credential_check f == [error per line matching SECRET_PATTERNS in f]
 
 =head1 AUTHOR
 
