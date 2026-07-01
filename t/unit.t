@@ -423,17 +423,20 @@ subtest 'Context::git_root -- does not reset a pending alarm()' => sub {
 	# Global-state integrity: git_root shells out; it must not call alarm(0).
 	# Use a 3-second alarm with a local no-op handler so the test cannot block
 	# the suite if the mock fails.
-	my $fired = 0;
-	local $SIG{ALRM} = sub { $fired = 1; alarm(0) };
-	my $ctx = _ctx();
-	alarm(3);
-	{
-		my $g = mock_scoped 'App::Project::Doctor::Context::git_root' => sub { undef };
-		$ctx->git_root;
+	SKIP: {
+		skip 'alarm() is not available on Windows', 2 if $^O eq 'MSWin32';
+		my $fired = 0;
+		local $SIG{ALRM} = sub { $fired = 1; alarm(0) };
+		my $ctx = _ctx();
+		alarm(3);
+		{
+			my $g = mock_scoped 'App::Project::Doctor::Context::git_root' => sub { undef };
+			$ctx->git_root;
+		}
+		my $remaining = alarm(0);
+		ok !$fired,         'alarm did not fire during git_root call';
+		ok $remaining >= 1, "alarm still had $remaining s remaining -- git_root did not call alarm()";
 	}
-	my $remaining = alarm(0);
-	ok !$fired,         'alarm did not fire during git_root call';
-	ok $remaining >= 1, "alarm still had $remaining s remaining -- git_root did not call alarm()";
 };
 
 # --- builder_file ---------------------------------------------------------

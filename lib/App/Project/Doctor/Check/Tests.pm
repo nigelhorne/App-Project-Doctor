@@ -44,9 +44,15 @@ sub check {
 	}
 
 	# Stage 3: prove must exit cleanly.
-	my $root   = $ctx->root;
-	my $output = qx{cd \Q$root\E && $PROVE_CMD};
-	if ($? != 0) {
+	# Use Perl chdir rather than shell 'cd && prove' to avoid Windows path-quoting issues.
+	my $root = $ctx->root;
+	require Cwd;
+	my $orig   = Cwd::cwd();
+	chdir $root;
+	my $output = qx{$PROVE_CMD};
+	my $status = $?;
+	chdir $orig;
+	if ($status != 0) {
 		return _f(
 			severity => 'error',
 			message  => sprintf('Test suite FAILED (%d file(s) with failures).', scalar @{$test_files}),

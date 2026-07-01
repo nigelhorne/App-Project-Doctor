@@ -197,6 +197,7 @@ sub _collect_files {
 			wanted   => sub {
 				return unless -f $_;
 				my $rel = File::Spec->abs2rel($_, $self->root);
+				$rel =~ s{\\}{/}g;    # normalize to forward slashes on Windows
 				push @found, $rel if $accept->($rel);
 			},
 		}, $abs_dir);
