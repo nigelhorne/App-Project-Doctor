@@ -4,24 +4,6 @@
 # Hostile, pathological, boundary-condition, and security tests.
 # Strategy: actively try to break or subvert each module.
 #
-# Three genuine bugs are exposed here and fixed in the source:
-#
-#   BUG-1  Context::abs_path / has_file -- path traversal
-#          rel_paths containing ".." could escape the distro root.
-#          Fix: abs_path() now rejects any path that contains ".." as a
-#          component; has_file() routes through abs_path() instead of
-#          calling File::Spec::catfile directly.
-#
-#   BUG-2  Doctor::_build_checks -- code injection via check name
-#          eval "require $class" with an unsanitised check name allows
-#          arbitrary Perl to run inside the eval block.
-#          Fix: each name is validated against /\A[A-Za-z][A-Za-z0-9]*\z/
-#          before the class string is built.
-#
-#   BUG-3  Fixer -- duplicate indices apply the same fix multiple times
-#          "1,1,1" caused fix #1 to be called three times.
-#          Fix: @indices is deduplicated with a %seen hash.
-
 use strict;
 use warnings;
 
@@ -35,9 +17,6 @@ use File::Path    qw(make_path);
 use File::Basename qw(dirname);
 use Scalar::Util  qw(blessed);
 
-# BUG-2 sentinel: declared at file scope (package main) so that the
-# stringified eval inside Doctor::_build_checks can write to it via
-# $main::INJECT_SENTINEL.
 our $INJECT_SENTINEL;
 
 # ---------------------------------------------------------------------------
@@ -259,7 +238,7 @@ subtest 'Finding::icon -- returns bracketed string for all four valid severities
 };
 
 # ===========================================================================
-# Context -- hostile inputs and path traversal (BUG-1)
+# Context -- hostile inputs and path traversal
 # ===========================================================================
 
 subtest 'Context::new -- non-existent root croaks' => sub {
@@ -300,9 +279,9 @@ subtest 'Context::slurp -- missing file croaks with documented error' => sub {
 		'slurp of absent file croaks "File not found"';
 };
 
-# BUG-1: abs_path must reject paths with ".." components to prevent
+# abs_path must reject paths with ".." components to prevent
 # reading/checking files outside the distribution root.
-subtest 'Context -- path traversal via abs_path is blocked (BUG-1)' => sub {
+subtest 'Context -- path traversal via abs_path is blocked' => sub {
 	my $ctx = _ctx();
 	throws_ok { $ctx->abs_path('../outside.txt') }
 		qr/path traversal/i,
@@ -312,14 +291,14 @@ subtest 'Context -- path traversal via abs_path is blocked (BUG-1)' => sub {
 		'abs_path with embedded ".." rejected';
 };
 
-subtest 'Context -- path traversal via has_file is blocked (BUG-1)' => sub {
+subtest 'Context -- path traversal via has_file is blocked' => sub {
 	my $ctx = _ctx();
 	throws_ok { $ctx->has_file('../sibling') }
 		qr/path traversal/i,
 		'has_file with ".." component rejected';
 };
 
-subtest 'Context -- path traversal via slurp is blocked (BUG-1)' => sub {
+subtest 'Context -- path traversal via slurp is blocked' => sub {
 	my $ctx = _ctx();
 	throws_ok { $ctx->slurp('../secret.txt') }
 		qr/path traversal/i,
@@ -420,7 +399,7 @@ subtest 'Report -- exit_code is 0 when only warnings present' => sub {
 };
 
 # ===========================================================================
-# Fixer -- hostile constructor, STDIN attack surface, index boundary (BUG-3)
+# Fixer -- hostile constructor, STDIN attack surface, index boundary
 # ===========================================================================
 
 subtest 'Fixer::new -- missing report argument croaks' => sub {
@@ -518,7 +497,7 @@ subtest 'Fixer -- STDIN out-of-range index applies no fixes' => sub {
 	is( $applied, 0, 'fix coderef not called for index > max' );
 };
 
-subtest 'Fixer -- duplicate indices apply each fix exactly once (BUG-3)' => sub {
+subtest 'Fixer -- duplicate indices apply each fix exactly once' => sub {
 	# Before the fix: "1,1,1" would call fix #1 three times.
 	# After the fix: indices are deduplicated; fix #1 is called once.
 	my $call_count = 0;
@@ -555,7 +534,7 @@ subtest 'Fixer -- non_interactive mode applies all fixes without STDIN' => sub {
 };
 
 # ===========================================================================
-# Doctor -- code injection via check name (BUG-2) and root detection
+# Doctor -- code injection via check name and root detection
 # ===========================================================================
 
 subtest 'Doctor::run -- no root marker found croaks' => sub {
@@ -566,7 +545,7 @@ subtest 'Doctor::run -- no root marker found croaks' => sub {
 		'run croaks when no root marker is present';
 };
 
-subtest 'Doctor -- check name injection blocked before eval (BUG-2)' => sub {
+subtest 'Doctor -- check name injection blocked before eval' => sub {
 	# Before the fix: eval "require App::Project::Doctor::Check::Tests;
 	# ++$main::INJECT_SENTINEL; 1" would execute the increment.
 	# After the fix: names not matching /\A[A-Za-z][A-Za-z0-9]*\z/ are
@@ -585,7 +564,7 @@ subtest 'Doctor -- check name injection blocked before eval (BUG-2)' => sub {
 		eval { $doctor->run };
 	}
 
-	is( $INJECT_SENTINEL, 0, 'injected code was not executed (BUG-2 fixed)' );
+	is( $INJECT_SENTINEL, 0, 'injected code was not executed' );
 	ok( scalar @carped, 'invalid check name produces a carp warning' );
 	like( join($EMPTY, @carped), qr/invalid|character/i,
 		'warning message mentions invalid characters' );

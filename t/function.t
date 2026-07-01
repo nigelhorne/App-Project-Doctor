@@ -6,11 +6,6 @@
 # Mocking: Test::Mockingbird -- mock/mock_scoped/mock_return/mock_exception/
 # mock_once/mock_sequence/spy/restore_all.
 # Return validation: Test::Returns -- returns_ok / returns_not_ok.
-#
-# A bug was found during test authoring and fixed in the source:
-#   Check::Security::_fix_pragma inserted 'use pragma;' before a shebang
-#   line when no 'package' declaration existed.  The fix is covered by
-#   the "shebang preservation" subtest below.
 
 use strict;
 use warnings;
@@ -1610,7 +1605,7 @@ subtest 'Check::Security::_fix_pragma -- inserts after package declaration' => s
 	is $lines[1], 'use strict;', 'pragma inserted immediately after package line';
 };
 
-subtest 'Check::Security::_fix_pragma -- preserves shebang as first line (bug fix)' => sub {
+subtest 'Check::Security::_fix_pragma -- preserves shebang as first line' => sub {
 	# Before the fix, 'use strict;' was incorrectly inserted BEFORE the shebang,
 	# making the script unrecognisable by the OS.  This test ensures that
 	# a shebang is always kept at position 0.
