@@ -24,6 +24,7 @@ requires 'autodie';
 on 'test' => sub {
 	requires 'File::Path';
 	requires 'File::Temp';
+	requires 'Test::DescribeMe';
 	requires 'Test::Exception';
 	requires 'Test::Memory::Cycle';
 	requires 'Test::Mockingbird';
