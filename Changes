@@ -6,6 +6,7 @@ Revision history for App-Project-Doctor
 
 	[ Enhancements ]
 	- Added Test Dashboard
+	- Added runtime configuration via Object::Configure
 
 0.01	Wed Jul  1 12:45:37 EDT 2026
         First draft

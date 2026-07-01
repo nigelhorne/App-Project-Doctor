@@ -99,6 +99,47 @@ Checks run sequentially; no parallelism.
 
 Nigel Horne `<njh@nigelhorne.com>`
 
+# SEE ALSO
+
+- [Configure an Object at Runtime](https://metacpan.org/pod/Object%3A%3AConfigure)
+- [Test Dashboard](https://nigelhorne.github.io/App-Project-Doctor/coverage/)
+
+# REPOSITORY
+
+[https://github.com/nigelhorne/App-Project-Doctor](https://github.com/nigelhorne/App-Project-Doctor)
+
+# SUPPORT
+
+This module is provided as-is without any warranty.
+
+Please report any bugs or feature requests to `bug-cgi-info at rt.cpan.org`,
+or through the web interface at
+[http://rt.cpan.org/NoAuth/ReportBug.html?Queue=App-Project-Doctor](http://rt.cpan.org/NoAuth/ReportBug.html?Queue=App-Project-Doctor).
+I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc App::Project::Doctor
+
+You can also look for information at:
+
+- MetaCPAN
+
+    [https://metacpan.org/dist/App-Project-Doctor](https://metacpan.org/dist/App-Project-Doctor)
+
+- RT: CPAN's request tracker
+
+    [https://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Project-Doctor](https://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Project-Doctor)
+
+- CPAN Testers' Matrix
+
+    [http://matrix.cpantesters.org/?dist=App-Project-Doctor](http://matrix.cpantesters.org/?dist=App-Project-Doctor)
+
+- CPAN Testers Dependencies
+
+    [http://deps.cpantesters.org/?module=App::Project::Doctor](http://deps.cpantesters.org/?module=App::Project::Doctor)
+
 # FORMAL SPECIFICATION
 
 ## doctor
@@ -117,6 +158,6 @@ Nigel Horne `<njh@nigelhorne.com>`
 
 # LICENSE
 
-Copyright (C) 2026 Nigel Horne.
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
+Usage is subject to the GPL2 licence terms.
+If you use it,
+please let me know.

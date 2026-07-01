@@ -20,6 +20,7 @@ use File::Basename qw(dirname);
 use Params::Get;
 # validate_strict enforces parameter schemas and throws immediately on failure.
 use Params::Validate::Strict qw(validate_strict);
+use Object::Configure;	# Allow the object to be configured at runtime
 
 our $VERSION = '0.01';
 
@@ -146,6 +147,9 @@ Readonly::Array my @ROOT_MARKERS => qw(
 
 sub new {
 	my $class = shift;
+	# Protect the caller's $@ from Object::Configure::configure and validate_strict,
+	# both of which use eval internally and set $@ = '' on success.
+	local $@;
 	# validate_strict parses arguments, applies defaults, and throws on bad input.
 	# It never returns undef -- failure always throws.
 	my $args = validate_strict(
@@ -160,6 +164,7 @@ sub new {
 			verbose => { type => 'scalar',   optional => 1, default => 0                 },
 		},
 	);
+	$args = Object::Configure::configure($class, $args);
 	# Wrap the validated args in a blessed reference and return it.
 	return bless $args, $class;
 }
@@ -317,6 +322,56 @@ Checks run sequentially; no parallelism.
 =head1 AUTHOR
 
 Nigel Horne C<< <njh@nigelhorne.com> >>
+
+=head1 SEE ALSO
+
+=over 4
+
+=item * L<Configure an Object at Runtime|Object::Configure>
+
+=item * L<Test Dashboard|https://nigelhorne.github.io/App-Project-Doctor/coverage/>
+
+=back
+
+=head1 REPOSITORY
+
+L<https://github.com/nigelhorne/App-Project-Doctor>
+
+=head1 SUPPORT
+
+This module is provided as-is without any warranty.
+
+Please report any bugs or feature requests to C<bug-cgi-info at rt.cpan.org>,
+or through the web interface at
+L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=App-Project-Doctor>.
+I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc App::Project::Doctor
+
+You can also look for information at:
+
+=over 4
+
+=item * MetaCPAN
+
+L<https://metacpan.org/dist/App-Project-Doctor>
+
+=item * RT: CPAN's request tracker
+
+L<https://rt.cpan.org/NoAuth/Bugs.html?Dist=App-Project-Doctor>
+
+=item * CPAN Testers' Matrix
+
+L<http://matrix.cpantesters.org/?dist=App-Project-Doctor>
+
+=item * CPAN Testers Dependencies
+
+L<http://deps.cpantesters.org/?module=App::Project::Doctor>
+
+=back
 
 =head1 FORMAL SPECIFICATION
 
