@@ -1,0 +1,695 @@
+{
+   "runs" : [
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927915.01819,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "-e",
+         "start" : 1782927908.41713,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927908.56577,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "-e",
+         "start" : 1782927908.56564,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927909.12309,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "t/edge_cases.t",
+         "start" : 1782927908.87624,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927909.69312,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "t/eof.t",
+         "start" : 1782927909.69289,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927909.92987,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "t/eol.t",
+         "start" : 1782927909.92967,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927910.48988,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "t/extended_tests.t",
+         "start" : 1782927910.21088,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927912.44462,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "t/function.t",
+         "start" : 1782927911.13357,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : null,
+         "dir" : "/tmp/VnYS7qELT5",
+         "finish" : 1782927911.95348,
+         "name" : "/tmp/VnYS7qELT5",
+         "perl" : "5.40.4",
+         "run" : "/opt/hostedtoolcache/perl/5.40.4/x64/bin/prove",
+         "start" : 1782927911.71988,
+         "version" : "unknown"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : null,
+         "dir" : "/tmp/VnYS7qELT5",
+         "finish" : 1782927911.91008,
+         "name" : "/tmp/VnYS7qELT5",
+         "perl" : "5.40.4",
+         "run" : "t/trivial.t",
+         "start" : 1782927911.90924,
+         "version" : "unknown"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : null,
+         "dir" : "/tmp/1dOgSj1IuJ",
+         "finish" : 1782927912.37432,
+         "name" : "/tmp/1dOgSj1IuJ",
+         "perl" : "5.40.4",
+         "run" : "/opt/hostedtoolcache/perl/5.40.4/x64/bin/prove",
+         "start" : 1782927912.14391,
+         "version" : "unknown"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : null,
+         "dir" : "/tmp/1dOgSj1IuJ",
+         "finish" : 1782927912.33562,
+         "name" : "/tmp/1dOgSj1IuJ",
+         "perl" : "5.40.4",
+         "run" : "t/failing.t",
+         "start" : 1782927912.33352,
+         "version" : "unknown"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927913.5662,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "t/integration.t",
+         "start" : 1782927913.35758,
+         "version" : "0.01"
+      },
+      {
+         "OS" : "linux",
+         "abstract" : "Unified pre-release health check for Perl CPAN distributions",
+         "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
+         "finish" : 1782927914.52318,
+         "name" : "App-Project-Doctor",
+         "perl" : "5.40.4",
+         "run" : "t/unit.t",
+         "start" : 1782927914.1789,
+         "version" : "0.01"
+      }
+   ],
+   "summary" : {
+      "/opt/hostedtoolcache/perl/5.40.4/x64/bin/prove" : {
+         "branch" : {
+            "covered" : 3,
+            "error" : 1,
+            "percentage" : 75,
+            "total" : 4,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 14,
+            "percentage" : 100,
+            "total" : 14
+         },
+         "subroutine" : {
+            "covered" : 4,
+            "percentage" : 100,
+            "total" : 4
+         },
+         "total" : {
+            "covered" : 21,
+            "error" : 1,
+            "percentage" : 95.4545454545455,
+            "total" : 22,
+            "uncoverable" : 0
+         }
+      },
+      "Total" : {
+         "branch" : {
+            "covered" : 233,
+            "error" : 17,
+            "percentage" : 93.2,
+            "total" : 250,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 46,
+            "error" : 14,
+            "percentage" : 76.6666666666667,
+            "total" : 60,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 976,
+            "error" : 14,
+            "percentage" : 98.5858585858586,
+            "total" : 990
+         },
+         "subroutine" : {
+            "covered" : 250,
+            "percentage" : 100,
+            "total" : 250
+         },
+         "total" : {
+            "covered" : 1505,
+            "error" : 45,
+            "percentage" : 97.0967741935484,
+            "total" : 1550,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor.pm" : {
+         "branch" : {
+            "covered" : 16,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 16,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 2,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 2,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 90,
+            "percentage" : 100,
+            "total" : 90
+         },
+         "subroutine" : {
+            "covered" : 20,
+            "percentage" : 100,
+            "total" : 20
+         },
+         "total" : {
+            "covered" : 128,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 128,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/Base.pm" : {
+         "statement" : {
+            "covered" : 20,
+            "percentage" : 100,
+            "total" : 20
+         },
+         "subroutine" : {
+            "covered" : 11,
+            "percentage" : 100,
+            "total" : 11
+         },
+         "total" : {
+            "covered" : 31,
+            "percentage" : 100,
+            "total" : 31
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/CI.pm" : {
+         "branch" : {
+            "covered" : 5,
+            "error" : 1,
+            "percentage" : 83.3333333333333,
+            "total" : 6,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 37,
+            "error" : 7,
+            "percentage" : 84.0909090909091,
+            "total" : 44
+         },
+         "subroutine" : {
+            "covered" : 14,
+            "percentage" : 100,
+            "total" : 14
+         },
+         "total" : {
+            "covered" : 56,
+            "error" : 8,
+            "percentage" : 87.5,
+            "total" : 64,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/CpanReadiness.pm" : {
+         "branch" : {
+            "covered" : 17,
+            "error" : 1,
+            "percentage" : 94.4444444444444,
+            "total" : 18,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 3,
+            "error" : 2,
+            "percentage" : 60,
+            "total" : 5,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 54,
+            "percentage" : 100,
+            "total" : 54
+         },
+         "subroutine" : {
+            "covered" : 13,
+            "percentage" : 100,
+            "total" : 13
+         },
+         "total" : {
+            "covered" : 87,
+            "error" : 3,
+            "percentage" : 96.6666666666667,
+            "total" : 90,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/Dependencies.pm" : {
+         "branch" : {
+            "covered" : 26,
+            "error" : 2,
+            "percentage" : 92.8571428571429,
+            "total" : 28,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 1,
+            "error" : 1,
+            "percentage" : 50,
+            "total" : 2,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 94,
+            "percentage" : 100,
+            "total" : 94
+         },
+         "subroutine" : {
+            "covered" : 19,
+            "percentage" : 100,
+            "total" : 19
+         },
+         "total" : {
+            "covered" : 140,
+            "error" : 3,
+            "percentage" : 97.9020979020979,
+            "total" : 143,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/License.pm" : {
+         "branch" : {
+            "covered" : 19,
+            "error" : 3,
+            "percentage" : 86.3636363636364,
+            "total" : 22,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 6,
+            "error" : 3,
+            "percentage" : 66.6666666666667,
+            "total" : 9,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 49,
+            "percentage" : 100,
+            "total" : 49
+         },
+         "subroutine" : {
+            "covered" : 13,
+            "percentage" : 100,
+            "total" : 13
+         },
+         "total" : {
+            "covered" : 87,
+            "error" : 6,
+            "percentage" : 93.5483870967742,
+            "total" : 93,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/Meta.pm" : {
+         "branch" : {
+            "covered" : 11,
+            "error" : 1,
+            "percentage" : 91.6666666666667,
+            "total" : 12,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 2,
+            "error" : 1,
+            "percentage" : 66.6666666666667,
+            "total" : 3,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 47,
+            "percentage" : 100,
+            "total" : 47
+         },
+         "subroutine" : {
+            "covered" : 12,
+            "percentage" : 100,
+            "total" : 12
+         },
+         "total" : {
+            "covered" : 72,
+            "error" : 2,
+            "percentage" : 97.2972972972973,
+            "total" : 74,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/Role.pm" : {
+         "statement" : {
+            "covered" : 12,
+            "percentage" : 100,
+            "total" : 12
+         },
+         "subroutine" : {
+            "covered" : 4,
+            "percentage" : 100,
+            "total" : 4
+         },
+         "total" : {
+            "covered" : 16,
+            "percentage" : 100,
+            "total" : 16
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/Security.pm" : {
+         "branch" : {
+            "covered" : 15,
+            "error" : 1,
+            "percentage" : 93.75,
+            "total" : 16,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 4,
+            "error" : 2,
+            "percentage" : 66.6666666666667,
+            "total" : 6,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 64,
+            "percentage" : 100,
+            "total" : 64
+         },
+         "subroutine" : {
+            "covered" : 14,
+            "percentage" : 100,
+            "total" : 14
+         },
+         "total" : {
+            "covered" : 97,
+            "error" : 3,
+            "percentage" : 97,
+            "total" : 100,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Check/Tests.pm" : {
+         "branch" : {
+            "covered" : 8,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 8,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 59,
+            "percentage" : 100,
+            "total" : 59
+         },
+         "subroutine" : {
+            "covered" : 16,
+            "percentage" : 100,
+            "total" : 16
+         },
+         "total" : {
+            "covered" : 83,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 83,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Context.pm" : {
+         "branch" : {
+            "covered" : 29,
+            "error" : 1,
+            "percentage" : 96.6666666666667,
+            "total" : 30,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 4,
+            "error" : 1,
+            "percentage" : 80,
+            "total" : 5,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 88,
+            "percentage" : 100,
+            "total" : 88
+         },
+         "subroutine" : {
+            "covered" : 25,
+            "percentage" : 100,
+            "total" : 25
+         },
+         "total" : {
+            "covered" : 146,
+            "error" : 2,
+            "percentage" : 98.6486486486486,
+            "total" : 148,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Finding.pm" : {
+         "branch" : {
+            "covered" : 10,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 10,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 4,
+            "error" : 1,
+            "percentage" : 80,
+            "total" : 5,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 41,
+            "percentage" : 100,
+            "total" : 41
+         },
+         "subroutine" : {
+            "covered" : 19,
+            "percentage" : 100,
+            "total" : 19
+         },
+         "total" : {
+            "covered" : 74,
+            "error" : 1,
+            "percentage" : 98.6666666666667,
+            "total" : 75,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Fixer.pm" : {
+         "branch" : {
+            "covered" : 20,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 20,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 7,
+            "error" : 1,
+            "percentage" : 87.5,
+            "total" : 8,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 74,
+            "percentage" : 100,
+            "total" : 74
+         },
+         "subroutine" : {
+            "covered" : 15,
+            "percentage" : 100,
+            "total" : 15
+         },
+         "total" : {
+            "covered" : 116,
+            "error" : 1,
+            "percentage" : 99.1452991452991,
+            "total" : 117,
+            "uncoverable" : 0
+         }
+      },
+      "blib/lib/App/Project/Doctor/Report.pm" : {
+         "branch" : {
+            "covered" : 28,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 28,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 8,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 8,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 102,
+            "percentage" : 100,
+            "total" : 102
+         },
+         "subroutine" : {
+            "covered" : 21,
+            "percentage" : 100,
+            "total" : 21
+         },
+         "total" : {
+            "covered" : 159,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 159,
+            "uncoverable" : 0
+         }
+      },
+      "lib/App/Project/Doctor/Check/GitHubActions.pm" : {
+         "branch" : {
+            "covered" : 14,
+            "error" : 2,
+            "percentage" : 87.5,
+            "total" : 16,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 2,
+            "error" : 0,
+            "percentage" : 100,
+            "total" : 2,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 57,
+            "error" : 7,
+            "percentage" : 89.0625,
+            "total" : 64
+         },
+         "subroutine" : {
+            "covered" : 16,
+            "percentage" : 100,
+            "total" : 16
+         },
+         "total" : {
+            "covered" : 89,
+            "error" : 9,
+            "percentage" : 90.8163265306122,
+            "total" : 98,
+            "uncoverable" : 0
+         }
+      },
+      "lib/App/Project/Doctor/Check/Pod.pm" : {
+         "branch" : {
+            "covered" : 12,
+            "error" : 4,
+            "percentage" : 75,
+            "total" : 16,
+            "uncoverable" : 0
+         },
+         "condition" : {
+            "covered" : 3,
+            "error" : 2,
+            "percentage" : 60,
+            "total" : 5,
+            "uncoverable" : 0
+         },
+         "statement" : {
+            "covered" : 74,
+            "percentage" : 100,
+            "total" : 74
+         },
+         "subroutine" : {
+            "covered" : 14,
+            "percentage" : 100,
+            "total" : 14
+         },
+         "total" : {
+            "covered" : 103,
+            "error" : 6,
+            "percentage" : 94.4954128440367,
+            "total" : 109,
+            "uncoverable" : 0
+         }
+      },
+      "t/failing.t" : {},
+      "t/trivial.t" : {}
+   }
+}
