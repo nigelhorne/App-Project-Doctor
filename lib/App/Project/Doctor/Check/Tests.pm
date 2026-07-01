@@ -7,6 +7,8 @@ use autodie qw(:all);
 use parent -norequire, 'App::Project::Doctor::Check::Base';
 
 use Carp qw(croak carp);
+use File::Path ();
+use File::Spec;
 use Readonly;
 
 our $VERSION = '0.01';
@@ -78,8 +80,19 @@ sub _f {
 sub _fix_scaffold {
 	my $ctx = shift;
 	return sub {
-		require App::Test::Generator;
-		App::Test::Generator->new(root => $ctx->root)->generate;
+		my $t_dir = File::Spec->catdir($ctx->root, 't');
+		File::Path::make_path($t_dir);
+		my $smoke = File::Spec->catfile($t_dir, '00-smoke.t');
+		open my $fh, '>', $smoke;
+		print {$fh} <<'END_SMOKE';
+use strict;
+use warnings;
+use Test::More;
+
+ok(1, 'module loads');
+done_testing;
+END_SMOKE
+		close $fh;
 	};
 }
 

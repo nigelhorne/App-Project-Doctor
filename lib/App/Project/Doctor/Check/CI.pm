@@ -7,6 +7,7 @@ use autodie qw(:all);
 use parent -norequire, 'App::Project::Doctor::Check::Base';
 
 use Carp qw(croak);
+use File::Spec;
 use Readonly;
 
 our $VERSION = '0.01';
@@ -40,8 +41,16 @@ sub check {
 		severity => 'error',
 		message  => 'No CI configuration found (GitHub Actions, Travis, CircleCI, AppVeyor).',
 		fix      => sub {
-			require App::GHGen;
-			App::GHGen->new(root => $_[0]->root)->generate;
+			my $root = $_[0]->root;
+			require App::GHGen::Generator;
+			my $yaml = App::GHGen::Generator::generate_workflow('perl');
+			return unless $yaml;
+			my $wf_dir = File::Spec->catdir($root, '.github', 'workflows');
+			require File::Path;
+			File::Path::make_path($wf_dir);
+			open my $fh, '>', File::Spec->catfile($wf_dir, 'perl-ci.yml');
+			print {$fh} $yaml;
+			close $fh;
 		},
 	);
 }

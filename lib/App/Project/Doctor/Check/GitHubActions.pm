@@ -89,8 +89,16 @@ sub _lint_workflow {
 sub _fix_generate {
 	my $ctx = shift;
 	return sub {
-		require App::GHGen;
-		App::GHGen->new(root => $ctx->root)->generate;
+		my $root = $ctx->root;
+		require App::GHGen::Generator;
+		my $yaml = App::GHGen::Generator::generate_workflow('perl');
+		return unless $yaml;
+		my $wf_dir = File::Spec->catdir($root, '.github', 'workflows');
+		require File::Path;
+		File::Path::make_path($wf_dir);
+		open my $fh, '>', File::Spec->catfile($wf_dir, 'perl-ci.yml');
+		print {$fh} $yaml;
+		close $fh;
 	};
 }
 
