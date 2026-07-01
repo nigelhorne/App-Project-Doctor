@@ -27,11 +27,11 @@ Readonly::Array my @BUILDER_FILES   => qw(Makefile.PL Build.PL dist.ini cpanfile
 sub new {
 	my $class = shift;
 	my $args = validate_strict(
+		args => Params::Get::get_params(undef, \@_) || {},
 		schema => {
 			root    => { type => 'scalar', optional => 1, default => '.' },
 			verbose => { type => 'scalar', optional => 1, default => 0   },
 		},
-		args => {@_},
 	) or croak $@;
 
 	croak "root '$args->{root}' is not a directory"
@@ -63,18 +63,21 @@ Returns true when C<$rel_path> (relative to root) exists on disk.
 sub has_file {
 	my ($self, $rel_path) = @_;
 	croak 'has_file requires a relative path' unless defined $rel_path;
-	return -e File::Spec->catfile($self->root, $rel_path);
+	return -e $self->abs_path($rel_path);    # abs_path enforces traversal check
 }
 
 =head2 abs_path( $rel_path )
 
 Returns the absolute filesystem path for C<$rel_path>.
+Croaks if C<$rel_path> contains C<..> as a path component (path traversal).
 
 =cut
 
 sub abs_path {
 	my ($self, $rel_path) = @_;
 	croak 'abs_path requires a relative path' unless defined $rel_path;
+	croak "Path traversal detected in '$rel_path'"
+		if grep { $_ eq '..' } File::Spec->splitdir($rel_path);
 	return File::Spec->catfile($self->root, $rel_path);
 }
 
@@ -87,6 +90,7 @@ Croaks if the file does not exist.
 
 sub slurp {
 	my ($self, $rel_path) = @_;
+	local $@;    # autodie's open wrapper uses eval internally; protect caller's $@
 	croak 'slurp requires a relative path' unless defined $rel_path;
 	my $abs = $self->abs_path($rel_path);
 	croak "File not found: $abs" unless -f $abs;

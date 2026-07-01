@@ -82,8 +82,9 @@ sub _interactive_loop {
 	}
 
 	if ($answer =~ /^[\d,\s]+$/) {
-		my $max      = scalar @{$fixable};
-		my @indices  = grep { $_ >= 1 && $_ <= $max }
+		my $max = scalar @{$fixable};
+		my %seen;
+		my @indices  = grep { $_ >= 1 && $_ <= $max && !$seen{$_}++ }
 		               map  { int($_) }
 		               split /[\s,]+/, $answer;
 		my @selected = map { $fixable->[$_ - 1] } @indices;

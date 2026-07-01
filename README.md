@@ -97,7 +97,7 @@ Checks run sequentially; no parallelism.
 
 # AUTHOR
 
-Nigel Horne `<njh@bandsman.co.uk>`
+Nigel Horne `<njh@nigelhorne.com>`
 
 # FORMAL SPECIFICATION
 

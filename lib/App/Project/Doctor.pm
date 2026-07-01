@@ -8,6 +8,7 @@ use Carp qw(croak carp);
 use Readonly;
 use File::Spec;
 use File::Basename qw(dirname);
+use Params::Get;
 use Params::Validate::Strict qw(validate_strict);
 
 our $VERSION = '0.01';
@@ -132,13 +133,13 @@ Readonly::Array my @ROOT_MARKERS => qw(
 sub new {
 	my $class = shift;
 	my $args = validate_strict(
+		args => Params::Get::get_params(undef, \@_) || {},
 		schema => {
 			path    => { type => 'scalar',   optional => 1, default => '.'               },
 			checks  => { type => 'arrayref', optional => 1, default => [@DEFAULT_CHECKS] },
 			skip    => { type => 'arrayref', optional => 1, default => []                },
 			verbose => { type => 'scalar',   optional => 1, default => 0                 },
 		},
-		args => {@_},
 	) or croak $@;
 	return bless $args, $class;
 }
@@ -232,6 +233,10 @@ sub _build_checks {
 
 	for my $name (@{ $self->checks }) {
 		next if $skip{ lc($name) };
+		unless ($name =~ /\A[A-Za-z][A-Za-z0-9]*\z/) {
+			carp "Check name '$name' contains invalid characters -- skipping";
+			next;
+		}
 		my $class = "App::Project::Doctor::Check::$name";
 		eval "require $class";    ## no critic (ProhibitStringyEval)
 		if ($@) {
@@ -254,7 +259,7 @@ Checks run sequentially; no parallelism.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 FORMAL SPECIFICATION
 
