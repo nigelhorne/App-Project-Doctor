@@ -4,7 +4,7 @@ App::Project::Doctor - Unified pre-release health check for Perl CPAN distributi
 
 # VERSION
 
-0.01
+0.02
 
 # SYNOPSIS
 
