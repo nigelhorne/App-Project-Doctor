@@ -5,7 +5,7 @@ use warnings;
 
 use Test::Most;
 use Test::Returns;
-use Test::Mockingbird qw(spy restore_all);
+use Test::Mockingbird qw(spy mock_scoped restore_all);
 use Readonly;
 use File::Temp qw(tempdir);
 use File::Spec;
@@ -253,28 +253,25 @@ subtest 'render_json returns parseable array with expected keys; fix excluded' =
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. OPTIONAL DEPENDENCY: JSON::MaybeXS
-# Strategy: Simulate the absence of JSON::MaybeXS using Test::Without::Module
-# and a local %INC shadow so the lazy require inside render_json re-fires.
-# Verifies that render_json fails loudly rather than silently returning garbage.
+# Strategy: mock_scoped replaces JSON::MaybeXS::new with a sub that throws,
+# simulating the module being unavailable. This is more portable than
+# Test::Without::Module + INC manipulation, which behaves differently across
+# Perl versions (runtime eval of 'use' does not reliably install the @INC hook).
 # ─────────────────────────────────────────────────────────────────────────────
 
-subtest 'render_json throws a "Can\'t locate" error when JSON::MaybeXS is absent' => sub {
-	eval 'use Test::Without::Module qw(JSON::MaybeXS)';
+subtest 'render_json throws when JSON::MaybeXS backend fails' => sub {
+	require JSON::MaybeXS;
 
 	my $report = $Report->new;
 	$report->add_findings(_f(severity => 'info', message => 'x', check_name => 'T'));
 
-	{
-		# Shadow %INC so the lazy require re-fires against the forbidden list.
-		local %INC = %INC;
-		delete $INC{'JSON/MaybeXS.pm'};
+	# Replace new() for the duration of this block; the guard restores it on exit.
+	my $g = mock_scoped 'JSON::MaybeXS::new'
+		=> sub { die "Simulated: JSON::MaybeXS unavailable\n" };
 
-		throws_ok { $report->render_json }
-			qr/Can't locate/,
-			'render_json throws when JSON::MaybeXS is not loadable';
-	}
-
-	eval q{ no Test::Without::Module qw(JSON::MaybeXS) };
+	throws_ok { $report->render_json }
+		qr/JSON::MaybeXS unavailable/,
+		'render_json propagates exception when JSON::MaybeXS backend fails';
 };
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -642,39 +639,36 @@ subtest 'dependencies check passes when all used modules are declared' => sub {
 	is( scalar(grep { $_->severity eq 'error' } @findings), 0, 'no error findings' );
 };
 
-subtest 'dependencies check degrades gracefully when App::makefilepl2cpanfile is unavailable' => sub {
+subtest 'dependencies check degrades gracefully when App::makefilepl2cpanfile fails' => sub {
 	require App::Project::Doctor::Check::Dependencies;
+	require App::makefilepl2cpanfile;
 
-	# Force App::makefilepl2cpanfile to appear unloadable for this scope only.
-	eval 'use Test::Without::Module qw(App::makefilepl2cpanfile)';
+	# Only Makefile.PL present -- the module path requires App::makefilepl2cpanfile.
+	my $dir = _make_distro(
+		'Makefile.PL' => "use ExtUtils::MakeMaker;\n",
+		'lib/My/M.pm' => "package My::M;\nuse strict;\nuse warnings;\n1;\n",
+	);
+	my $ctx   = $Context->new(root => $dir);
+	my $check = App::Project::Doctor::Check::Dependencies->new;
+
+	# Simulate generate() failing (equivalent to the module being uninstalled).
+	# mock_scoped is portable across all Perl versions; Test::Without::Module +
+	# local %INC manipulation is not reliable when 'use' is evaluated at runtime.
+	my $g = mock_scoped 'App::makefilepl2cpanfile::generate'
+		=> sub { die "Simulated: App::makefilepl2cpanfile unavailable\n" };
+
+	my (@findings, @carped);
 	{
-		local %INC = %INC;
-		delete $INC{'App/makefilepl2cpanfile.pm'};
-
-		# Only Makefile.PL present -- the module path requires App::makefilepl2cpanfile.
-		my $dir = _make_distro(
-			'Makefile.PL' => "use ExtUtils::MakeMaker;\n",
-			'lib/My/M.pm' => "package My::M;\nuse strict;\nuse warnings;\n1;\n",
-		);
-		my $ctx   = $Context->new(root => $dir);
-		my $check = App::Project::Doctor::Check::Dependencies->new;
-
-		# Silence the expected carp from _collect_declared so it does not leak
-		# into TAP diagnostics via Test::Builder's $SIG{__WARN__} hook.
-		my (@findings, @carped);
-		{
-			local $SIG{__WARN__} = sub { push @carped, $_[0] };
-			@findings = eval { $check->check($ctx) };
-		}
-		ok( !$@, 'check does not throw when App::makefilepl2cpanfile is unavailable' );
-		is( scalar @findings, 1,               'exactly one finding returned' );
-		is( $findings[0]->severity, 'warning', 'finding is a warning, not an exception' );
-		ok( scalar @carped,                    'carp was called to report the load failure' );
-
-		diag 'warning: ' . $findings[0]->message if $ENV{TEST_VERBOSE};
-		diag 'carped: '  . $carped[0]            if $ENV{TEST_VERBOSE} && @carped;
+		local $SIG{__WARN__} = sub { push @carped, $_[0] };
+		@findings = eval { $check->check($ctx) };
 	}
-	eval q{ no Test::Without::Module qw(App::makefilepl2cpanfile) };
+	ok( !$@,                               'check does not throw when generate() fails' );
+	is( scalar @findings, 1,               'exactly one finding returned' );
+	is( $findings[0]->severity, 'warning', 'finding is a warning, not an exception' );
+	ok( scalar @carped,                    'carp was called to report the failure' );
+
+	diag 'warning: ' . $findings[0]->message if $ENV{TEST_VERBOSE};
+	diag 'carped: '  . $carped[0]            if $ENV{TEST_VERBOSE} && @carped;
 };
 
 # ─────────────────────────────────────────────────────────────────────────────

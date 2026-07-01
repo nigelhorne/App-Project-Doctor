@@ -1,8 +1,3 @@
-## run
-
-Detects the distro root, instantiates all enabled checks, runs them in order,
-and returns an [App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport).
-
 # NAME
 
 App::Project::Doctor - Unified pre-release health check for Perl CPAN distributions
@@ -77,20 +72,6 @@ None.
     DR01 | Cannot detect distribution root  | Run from within a distribution directory
     DR02 | A check class cannot be loaded   | Install the check's prerequisites
 
-### FORMAL SPECIFICATION
-
-    Doctor == { path : Path, checks : [Name], skip : [Name], verbose : Bool }
-
-    run : Doctor -> Report
-    run d ==
-      let root    = detect_root (path d)
-          ctx     = Context { root, verbose = verbose d }
-          enabled = sort_by_order (checks d \\ skip d)
-      in  Report { concat [ check c ctx | c <- enabled ] }
-
-    detect_root : Path -> Path | undefined
-    detect_root p == nearest ancestor of p containing a ROOT_MARKER
-
 # CHECKS
 
 In default execution order:
@@ -105,6 +86,11 @@ In default execution order:
     Security        strict/warnings everywhere; no hardcoded secrets
     CpanReadiness   Version format, Changes, MANIFEST, README
 
+## run
+
+Detects the distro root, instantiates all enabled checks, runs them in order,
+and returns an [App::Project::Doctor::Report](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AReport).
+
 # LIMITATIONS
 
 Checks run sequentially; no parallelism.
@@ -112,6 +98,22 @@ Checks run sequentially; no parallelism.
 # AUTHOR
 
 Nigel Horne `<njh@bandsman.co.uk>`
+
+# FORMAL SPECIFICATION
+
+## doctor
+
+    Doctor == { path : Path, checks : [Name], skip : [Name], verbose : Bool }
+
+    run : Doctor -> Report
+    run d ==
+      let root    = detect_root (path d)
+          ctx     = Context { root, verbose = verbose d }
+          enabled = sort_by_order (checks d \\ skip d)
+      in  Report { concat [ check c ctx | c <- enabled ] }
+
+    detect_root : Path -> Path | undefined
+    detect_root p == nearest ancestor of p containing a ROOT_MARKER
 
 # LICENSE
 

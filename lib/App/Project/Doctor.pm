@@ -12,6 +12,96 @@ use Params::Validate::Strict qw(validate_strict);
 
 our $VERSION = '0.01';
 
+=head1 NAME
+
+App::Project::Doctor - Unified pre-release health check for Perl CPAN distributions
+
+=head1 VERSION
+
+0.01
+
+=head1 SYNOPSIS
+
+  # Command line
+  project-doctor [--check=Tests,CI] [--skip=Meta] [--fix] [PATH]
+
+  # Programmatic
+  use App::Project::Doctor;
+
+  my $doctor = App::Project::Doctor->new(path => '/path/to/my-dist');
+  my $report = $doctor->run;
+  print $report->render_text;
+  exit $report->exit_code;
+
+=head1 DESCRIPTION
+
+Orchestrates a suite of diagnostic checks against a Perl CPAN distribution,
+combining L<App::Workflow::Lint>, L<App::GHGen>, L<App::makefilepl2cpanfile>,
+and L<App::Test::Generator> into a single interactive pre-upload tool.
+
+Each enabled C<App::Project::Doctor::Check::*> plugin receives an
+L<App::Project::Doctor::Context> and returns a list of
+L<App::Project::Doctor::Finding> objects which are collected into an
+L<App::Project::Doctor::Report>.
+
+=head1 CONSTRUCTOR
+
+=head2 new( %args )
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+  path    : String    -- start path for root detection    default '.'
+  checks  : ArrayRef  -- check name suffixes to run       default all
+  skip    : ArrayRef  -- check names to exclude           default []
+  verbose : Bool                                          default 0
+
+=head4 Output
+
+Blessed hashref of type C<App::Project::Doctor>.
+
+=head1 ACCESSORS
+
+C<path>, C<checks>, C<skip>, C<verbose> -- read-only.
+
+=head1 METHODS
+
+=head2 run
+
+=head3 API SPECIFICATION
+
+=head4 Input
+
+None.
+
+=head4 Output
+
+L<App::Project::Doctor::Report>.
+
+=head3 MESSAGES
+
+  Code | Trigger                         | Resolution
+  -----|----------------------------------|----------------------------------------
+  DR01 | Cannot detect distribution root  | Run from within a distribution directory
+  DR02 | A check class cannot be loaded   | Install the check's prerequisites
+
+=head1 CHECKS
+
+In default execution order:
+
+  Tests           t/ exists, .t files present, prove passes
+  CI              At least one CI configuration present
+  GitHubActions   Workflow YAML validates via App::Workflow::Lint
+  Meta            META.yml/json parsed and complete
+  Pod             All .pm files have valid POD
+  Dependencies    Used modules declared as prerequisites
+  License         LICENSE file present and consistent with META
+  Security        strict/warnings everywhere; no hardcoded secrets
+  CpanReadiness   Version format, Changes, MANIFEST, README
+
+=cut
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -158,81 +248,17 @@ sub _build_checks {
 
 __END__
 
-=head1 NAME
+=head1 LIMITATIONS
 
-App::Project::Doctor - Unified pre-release health check for Perl CPAN distributions
+Checks run sequentially; no parallelism.
 
-=head1 VERSION
+=head1 AUTHOR
 
-0.01
+Nigel Horne C<< <njh@bandsman.co.uk> >>
 
-=head1 SYNOPSIS
+=head1 FORMAL SPECIFICATION
 
-  # Command line
-  project-doctor [--check=Tests,CI] [--skip=Meta] [--fix] [PATH]
-
-  # Programmatic
-  use App::Project::Doctor;
-
-  my $doctor = App::Project::Doctor->new(path => '/path/to/my-dist');
-  my $report = $doctor->run;
-  print $report->render_text;
-  exit $report->exit_code;
-
-=head1 DESCRIPTION
-
-Orchestrates a suite of diagnostic checks against a Perl CPAN distribution,
-combining L<App::Workflow::Lint>, L<App::GHGen>, L<App::makefilepl2cpanfile>,
-and L<App::Test::Generator> into a single interactive pre-upload tool.
-
-Each enabled C<App::Project::Doctor::Check::*> plugin receives an
-L<App::Project::Doctor::Context> and returns a list of
-L<App::Project::Doctor::Finding> objects which are collected into an
-L<App::Project::Doctor::Report>.
-
-=head1 CONSTRUCTOR
-
-=head2 new( %args )
-
-=head3 API SPECIFICATION
-
-=head4 Input
-
-  path    : String    -- start path for root detection    default '.'
-  checks  : ArrayRef  -- check name suffixes to run       default all
-  skip    : ArrayRef  -- check names to exclude           default []
-  verbose : Bool                                          default 0
-
-=head4 Output
-
-Blessed hashref of type C<App::Project::Doctor>.
-
-=head1 ACCESSORS
-
-C<path>, C<checks>, C<skip>, C<verbose> -- read-only.
-
-=head1 METHODS
-
-=head2 run
-
-=head3 API SPECIFICATION
-
-=head4 Input
-
-None.
-
-=head4 Output
-
-L<App::Project::Doctor::Report>.
-
-=head3 MESSAGES
-
-  Code | Trigger                         | Resolution
-  -----|----------------------------------|----------------------------------------
-  DR01 | Cannot detect distribution root  | Run from within a distribution directory
-  DR02 | A check class cannot be loaded   | Install the check's prerequisites
-
-=head3 FORMAL SPECIFICATION
+=head2 doctor
 
   Doctor == { path : Path, checks : [Name], skip : [Name], verbose : Bool }
 
@@ -245,28 +271,6 @@ L<App::Project::Doctor::Report>.
 
   detect_root : Path -> Path | undefined
   detect_root p == nearest ancestor of p containing a ROOT_MARKER
-
-=head1 CHECKS
-
-In default execution order:
-
-  Tests           t/ exists, .t files present, prove passes
-  CI              At least one CI configuration present
-  GitHubActions   Workflow YAML validates via App::Workflow::Lint
-  Meta            META.yml/json parsed and complete
-  Pod             All .pm files have valid POD
-  Dependencies    Used modules declared as prerequisites
-  License         LICENSE file present and consistent with META
-  Security        strict/warnings everywhere; no hardcoded secrets
-  CpanReadiness   Version format, Changes, MANIFEST, README
-
-=head1 LIMITATIONS
-
-Checks run sequentially; no parallelism.
-
-=head1 AUTHOR
-
-Nigel Horne C<< <njh@bandsman.co.uk> >>
 
 =head1 LICENSE
 
