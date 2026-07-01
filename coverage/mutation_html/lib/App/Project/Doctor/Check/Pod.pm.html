@@ -1,0 +1,553 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Project/Doctor/Check/Pod.pm</h1>
+<div class="nav"><a href="Meta.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="Security.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 75.00%<br>
+TER3 (LCSAJ): 100.0% (4/4)<br>
+Approximate LCSAJ segments: 17<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Project::Doctor::Check::Pod;
+</span><span class="">    2: 
+</span><span class="">    3: # This check verifies that every .pm file under lib/ contains valid POD
+</span><span class="">    4: # documentation.  It uses Pod::Checker to detect syntax errors.
+</span><span class="">    5: # Modules with no POD at all get a fixable finding that writes a skeleton.
+</span><span class="">    6: 
+</span><span class="">    7: use strict;
+</span><span class="">    8: use warnings;
+</span><span class="">    9: use autodie qw(:all);
+</span><span class="">   10: 
+</span><span class="">   11: # Inherit the standard check interface from Check::Base.
+</span><span class="">   12: use parent -norequire, &#39;App::Project::Doctor::Check::Base&#39;;
+</span><span class="">   13: 
+</span><span class="">   14: # croak dies with the caller&#39;s location; carp warns there.
+</span><span class="">   15: use Carp qw(croak carp);
+</span><span class="">   16: 
+</span><span class="">   17: our $VERSION = &#39;0.02&#39;;
+</span><span class="">   18: 
+</span><span class="">   19: # Short name used in Finding.check_name and text-report columns.
+</span><span class="">   20: sub name        { &#39;POD&#39; }
+</span><span class="">   21: # One-line description for --help and verbose output.
+</span><span class="">   22: sub description { &#39;Every .pm file contains valid, parseable POD documentation.&#39; }
+</span><span class="">   23: # This check can offer a fix (append a POD skeleton).
+</span><span class="">   24: sub can_fix     { 1 }
+</span><span class="">   25: # Run after Dependencies (50) but before Security (60).
+</span><span class="">   26: sub order       { 40 }
+</span><span class="">   27: 
+</span><span class="">   28: sub check {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">29 → 38 → 45</span></span>   29: 	my ($self, $ctx) = @_;
+</span><span class="">   30: 	# Guard: require a proper Context object.
+</span><span class="">   31: 	croak &#39;check requires an App::Project::Doctor::Context&#39; unless ref $ctx;
+</span><span class="">   32: 
+</span><span class="">   33: 	my @findings;
+</span><span class="">   34: 	# lib_modules() returns an arrayref of .pm paths relative to the distro root.
+</span><span class="">   35: 	my $modules = $ctx-&gt;lib_modules;
+</span><span class="">   36: 
+</span><span class="">   37: 	# If there are no .pm files at all there is nothing to check.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   38: 	unless (@{$modules}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   39: 		return _f(
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   40: 			severity =&gt; &#39;info&#39;,
+</span><span class="">   41: 			message  =&gt; &#39;No .pm files under lib/ -- nothing to check.&#39;,
+</span><span class="">   42: 		);
+</span><span class="">   43: 	}
+</span><span class="">   44: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">45 → 45 → 76</span></span>   45: 	for my $mod (@{$modules}) {
+</span><span class="">   46: 		# Try to read the module source; skip it with a carp if reading fails.
+</span><span class="">   47: 		my $content = eval { $ctx-&gt;slurp($mod) } // do { carp &quot;Cannot slurp $mod: $@&quot;; next };
+</span><span class="">   48: 
+</span><span class="">   49: 		# Quick check: does the file contain any POD at all?
+</span><span class="">   50: 		# A line beginning with &#39;=&#39; followed by a word character starts a POD block.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   51: 		unless ($content =~ /^=\w/m) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   52: 			# No POD found -- offer to append a skeleton.
+</span><span class="">   53: 			push @findings, _f(
+</span><span class="">   54: 				severity =&gt; &#39;error&#39;,
+</span><span class="">   55: 				message  =&gt; &quot;No POD found in $mod.&quot;,
+</span><span class="">   56: 				file     =&gt; $mod,
+</span><span class="">   57: 				fix      =&gt; _fix_scaffold_pod($ctx, $mod),
+</span><span class="">   58: 			);
+</span><span class="">   59: 			# No point running Pod::Checker on a file with no POD at all.
+</span><span class="">   60: 			next;
+</span><span class="">   61: 		}
+</span><span class="">   62: 
+</span><span class="">   63: 		# Validate the existing POD with Pod::Checker and collect any errors.
+</span><span class="">   64: 		for my $err (_check_pod($ctx-&gt;abs_path($mod))) {
+</span><span class="">   65: 			push @findings, _f(
+</span><span class="">   66: 				severity =&gt; &#39;error&#39;,
+</span><span class="">   67: 				message  =&gt; &quot;POD error in $mod: $err-&gt;{message}&quot;,
+</span><span class="">   68: 				file     =&gt; $mod,
+</span><span class="">   69: 				# Only include a line number when Pod::Checker provided one.
+</span><span class="">   70: 				defined $err-&gt;{line} ? (line =&gt; $err-&gt;{line}) : (),
+</span><span class="">   71: 			);
+</span><span class="">   72: 		}
+</span><span class="">   73: 	}
+</span><span class="">   74: 
+</span><span class="">   75: 	# If we collected no error findings, all modules have valid POD.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">76 → 76 → 83</span></span>   76: 	unless (@findings) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   77: 		push @findings, _f(
+</span><span class="">   78: 			severity =&gt; &#39;pass&#39;,
+</span><span class="">   79: 			message  =&gt; sprintf(&#39;%d module(s) checked -- all have valid POD.&#39;, scalar @{$modules}),
+</span><span class="">   80: 		);
+</span><span class="">   81: 	}
+</span><span class="">   82: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   83: 	return @findings;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   84: }
+</span><span class="">   85: 
+</span><span class="">   86: # ---------------------------------------------------------------------------
+</span><span class="">   87: # Private helpers
+</span><span class="">   88: # ---------------------------------------------------------------------------
+</span><span class="">   89: 
+</span><span class="">   90: # Purpose:    Create a Finding with check_name pre-filled to &#39;POD&#39;.
+</span><span class="">   91: # Entry:      %args is a valid Finding constructor argument list.
+</span><span class="">   92: # Exit:       App::Project::Doctor::Finding object.
+</span><span class="">   93: # Side effects: None.
+</span><span class="">   94: sub _f {
+</span><span class="">   95: 	require App::Project::Doctor::Finding;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   96: 	return App::Project::Doctor::Finding-&gt;new(check_name =&gt; &#39;POD&#39;, @_);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   97: }
+</span><span class="">   98: 
+</span><span class="">   99: # Purpose:    Run Pod::Checker on a single file and return a list of errors.
+</span><span class="">  100: # Entry:      $abs_path is the absolute path to the .pm file to check.
+</span><span class="">  101: # Exit:       List of hashrefs with &#39;message&#39; string and optional &#39;line&#39; int.
+</span><span class="">  102: # Side effects: Loads Pod::Checker if not already in memory; writes to an in-memory
+</span><span class="">  103: #               filehandle (no disk I/O).
+</span><span class="">  104: sub _check_pod {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">105 → 120 → 131</span></span>  105: 	my $abs_path = shift;
+</span><span class="">  106: 	require Pod::Checker;
+</span><span class="">  107: 
+</span><span class="">  108: 	# Capture Pod::Checker&#39;s diagnostic output into a scalar instead of STDERR.
+</span><span class="">  109: 	my $captured = &#39;&#39;;
+</span><span class="">  110: 	open my $out_fh, &#39;&gt;&#39;, \$captured;
+</span><span class="">  111: 	my $checker = Pod::Checker-&gt;new;
+</span><span class="">  112: 	$checker-&gt;parse_from_file($abs_path, $out_fh);
+</span><span class="">  113: 	close $out_fh;
+</span><span class="">  114: 
+</span><span class="">  115: 	# If Pod::Checker reported no errors, return an empty list immediately.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  116: 	return () if ($checker-&gt;num_errors // 0) == 0;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  117: 
+</span><span class="">  118: 	# Parse the captured text output to extract individual error messages.
+</span><span class="">  119: 	my @errors;
+</span><span class="">  120: 	for my $line (split /\n/, $captured) {
+</span><span class="">  121: 		# Skip blank lines in the checker output.
+</span><span class="">  122: 		next unless $line =~ /\S/;
+</span><span class="">  123: 		# Try to extract the line number from the Pod::Checker message.
+</span><span class="">  124: 		my ($lineno) = $line =~ /line\s+(\d+)/i;
+</span><span class="">  125: 		push @errors, {
+</span><span class="">  126: 			message =&gt; $line,
+</span><span class="">  127: 			# Only include &#39;line&#39; in the hashref when we actually found one.
+</span><span class="">  128: 			defined $lineno ? (line =&gt; $lineno) : (),
+</span><span class="">  129: 		};
+</span><span class="">  130: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  131: 	return @errors;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  132: }
+</span><span class="">  133: 
+</span><span class="">  134: # Purpose:    Return a coderef that rewrites a module file with a POD skeleton.
+</span><span class="">  135: # Entry:      $ctx is the Context; $rel_path is the module path relative to root.
+</span><span class="">  136: # Exit:       Coderef ($ctx) -&gt; void; rewrites the module file with POD appended.
+</span><span class="">  137: # Side effects: Modifies the module file on disk when the coderef is called.
+</span><span class="">  138: sub _fix_scaffold_pod {
+</span><span class="">  139: 	my ($ctx, $rel_path) = @_;
+</span><span class="">  140: 	# Return the fix as a closure so it runs only when the user accepts it.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  141: 	return sub {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  142: 		# Protect caller&#39;s $@ from autodie&#39;s internal eval inside open().
+</span><span class="">  143: 		local $@;
+</span><span class="">  144: 		my $abs = $ctx-&gt;abs_path($rel_path);
+</span><span class="">  145: 		# Convert the relative file path to a Perl package name.
+</span><span class="">  146: 		# e.g. lib/My/Module.pm -&gt; My::Module
+</span><span class="">  147: 		(my $pkg = $rel_path) =~ s{^lib/}{}; $pkg =~ s{/}{::}g; $pkg =~ s{\.pm$}{};
+</span><span class="">  148: 
+</span><span class="">  149: 		# Read the existing file so we can rewrite it (not just append).
+</span><span class="">  150: 		open my $rfh, &#39;&lt;&#39;, $abs;
+</span><span class="">  151: 		my $content = do { local $/; &lt;$rfh&gt; };
+</span><span class="">  152: 		close $rfh;
+</span><span class="">  153: 
+</span><span class="">  154: 		# Remove any trailing `1;` so the rewritten file has exactly one.
+</span><span class="">  155: 		# Without this, the original `1;` and the skeleton&#39;s `1;` would both appear.
+</span><span class="">  156: 		$content =~ s/\s*\n?1;\s*\z//s;
+</span><span class="">  157: 
+</span><span class="">  158: 		# Write the existing content back followed by the POD skeleton.
+</span><span class="">  159: 		open my $wfh, &#39;&gt;&#39;, $abs;
+</span><span class="">  160: 		print {$wfh} $content, &lt;&lt;&quot;END_POD&quot;;
+</span><span class="">  161: 
+</span><span class="">  162: 1;
+</span><span class="">  163: 
+</span><span class="">  164: __END__
+</span><span class="">  165: 
+</span><span class="">  166: =head1 NAME
+</span><span class="">  167: 
+</span><span class="">  168: $pkg - (description goes here)
+</span><span class="">  169: 
+</span><span class="">  170: =head1 SYNOPSIS
+</span><span class="">  171: 
+</span><span class="">  172:   use $pkg;
+</span><span class="">  173: 
+</span><span class="">  174: =head1 DESCRIPTION
+</span><span class="">  175: 
+</span><span class="">  176: (description goes here)
+</span><span class="">  177: 
+</span><span class="">  178: =head1 AUTHOR
+</span><span class="">  179: 
+</span><span class="">  180: Nigel Horne C&lt;&lt; &lt;njh\@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  181: 
+</span><span class="">  182: =head1 LICENSE
+</span><span class="">  183: 
+</span><span class="">  184: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  185: This library is free software; you can redistribute it and/or modify
+</span><span class="">  186: it under the same terms as Perl itself.
+</span><span class="">  187: 
+</span><span class="">  188: =cut
+</span><span class="">  189: END_POD
+</span><span class="">  190: 		close $wfh;
+</span><span class="">  191: 	};
+</span><span class="">  192: }
+</span><span class="">  193: 
+</span><span class="">  194: 1;
+</span><span class="">  195: 
+</span><span class="">  196: __END__
+</span><span class="">  197: 
+</span><span class="">  198: =head1 NAME
+</span><span class="">  199: 
+</span><span class="">  200: App::Project::Doctor::Check::Pod - Check POD presence and validity in all modules
+</span><span class="">  201: 
+</span><span class="">  202: =head1 DESCRIPTION
+</span><span class="">  203: 
+</span><span class="">  204: Uses L&lt;Pod::Checker&gt; to validate every C&lt;.pm&gt; under C&lt;lib/&gt;.  Modules with no
+</span><span class="">  205: POD at all get a fixable finding that appends a minimal skeleton.
+</span><span class="">  206: 
+</span><span class="">  207: =head3 MESSAGES
+</span><span class="">  208: 
+</span><span class="">  209:   Code | Trigger                  | Resolution
+</span><span class="">  210:   -----|--------------------------|-----------------------------------------------
+</span><span class="">  211:   P001 | No POD in a .pm file     | Fix appends a skeleton; fill in by hand
+</span><span class="">  212:   P002 | Pod::Checker error       | Correct the malformed POD
+</span><span class="">  213: 
+</span><span class="">  214: =head3 FORMAL SPECIFICATION
+</span><span class="">  215: 
+</span><span class="">  216:   check : Context -&gt; [Finding]
+</span><span class="">  217:   check ctx ==
+</span><span class="">  218:     concat [ check_one m | m &lt;- lib_modules ctx ]
+</span><span class="">  219:     where check_one m ==
+</span><span class="">  220:             (if no_pod m then [error+fix] else [])
+</span><span class="">  221:             ++ pod_errors m
+</span><span class="">  222: 
+</span><span class="">  223: =head1 AUTHOR
+</span><span class="">  224: 
+</span><span class="">  225: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  226: 
+</span><span class="">  227: =head1 LICENSE
+</span><span class="">  228: 
+</span><span class="">  229: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  230: This library is free software; you can redistribute it and/or modify
+</span><span class="">  231: it under the same terms as Perl itself.
+</span><span class="">  232: 
+</span><span class="">  233: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	

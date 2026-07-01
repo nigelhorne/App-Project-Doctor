@@ -4,144 +4,144 @@
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927915.01819,
+         "finish" : 1782928849.46526,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "-e",
-         "start" : 1782927908.41713,
-         "version" : "0.01"
+         "start" : 1782928842.89742,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927908.56577,
+         "finish" : 1782928843.04123,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "-e",
-         "start" : 1782927908.56564,
-         "version" : "0.01"
+         "start" : 1782928843.04114,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927909.12309,
+         "finish" : 1782928843.57515,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "t/edge_cases.t",
-         "start" : 1782927908.87624,
-         "version" : "0.01"
+         "start" : 1782928843.34366,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927909.69312,
+         "finish" : 1782928844.14257,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "t/eof.t",
-         "start" : 1782927909.69289,
-         "version" : "0.01"
+         "start" : 1782928844.14239,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927909.92987,
+         "finish" : 1782928844.39404,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "t/eol.t",
-         "start" : 1782927909.92967,
-         "version" : "0.01"
+         "start" : 1782928844.39386,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927910.48988,
+         "finish" : 1782928844.93822,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "t/extended_tests.t",
-         "start" : 1782927910.21088,
-         "version" : "0.01"
+         "start" : 1782928844.66668,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927912.44462,
+         "finish" : 1782928846.89081,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "t/function.t",
-         "start" : 1782927911.13357,
-         "version" : "0.01"
+         "start" : 1782928845.57579,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : null,
-         "dir" : "/tmp/VnYS7qELT5",
-         "finish" : 1782927911.95348,
-         "name" : "/tmp/VnYS7qELT5",
+         "dir" : "/tmp/K53NrwICf0",
+         "finish" : 1782928846.42239,
+         "name" : "/tmp/K53NrwICf0",
          "perl" : "5.40.4",
          "run" : "/opt/hostedtoolcache/perl/5.40.4/x64/bin/prove",
-         "start" : 1782927911.71988,
+         "start" : 1782928846.18176,
          "version" : "unknown"
       },
       {
          "OS" : "linux",
          "abstract" : null,
-         "dir" : "/tmp/VnYS7qELT5",
-         "finish" : 1782927911.91008,
-         "name" : "/tmp/VnYS7qELT5",
+         "dir" : "/tmp/K53NrwICf0",
+         "finish" : 1782928846.38445,
+         "name" : "/tmp/K53NrwICf0",
          "perl" : "5.40.4",
          "run" : "t/trivial.t",
-         "start" : 1782927911.90924,
+         "start" : 1782928846.38355,
          "version" : "unknown"
       },
       {
          "OS" : "linux",
          "abstract" : null,
-         "dir" : "/tmp/1dOgSj1IuJ",
-         "finish" : 1782927912.37432,
-         "name" : "/tmp/1dOgSj1IuJ",
+         "dir" : "/tmp/3pySJyHdZN",
+         "finish" : 1782928846.81943,
+         "name" : "/tmp/3pySJyHdZN",
          "perl" : "5.40.4",
          "run" : "/opt/hostedtoolcache/perl/5.40.4/x64/bin/prove",
-         "start" : 1782927912.14391,
+         "start" : 1782928846.58996,
          "version" : "unknown"
       },
       {
          "OS" : "linux",
          "abstract" : null,
-         "dir" : "/tmp/1dOgSj1IuJ",
-         "finish" : 1782927912.33562,
-         "name" : "/tmp/1dOgSj1IuJ",
+         "dir" : "/tmp/3pySJyHdZN",
+         "finish" : 1782928846.78096,
+         "name" : "/tmp/3pySJyHdZN",
          "perl" : "5.40.4",
          "run" : "t/failing.t",
-         "start" : 1782927912.33352,
+         "start" : 1782928846.77886,
          "version" : "unknown"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927913.5662,
+         "finish" : 1782928848.02362,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "t/integration.t",
-         "start" : 1782927913.35758,
-         "version" : "0.01"
+         "start" : 1782928847.81752,
+         "version" : "0.02"
       },
       {
          "OS" : "linux",
          "abstract" : "Unified pre-release health check for Perl CPAN distributions",
          "dir" : "/home/runner/work/App-Project-Doctor/App-Project-Doctor",
-         "finish" : 1782927914.52318,
+         "finish" : 1782928848.96667,
          "name" : "App-Project-Doctor",
          "perl" : "5.40.4",
          "run" : "t/unit.t",
-         "start" : 1782927914.1789,
-         "version" : "0.01"
+         "start" : 1782928848.62481,
+         "version" : "0.02"
       }
    ],
    "summary" : {
@@ -173,10 +173,10 @@
       },
       "Total" : {
          "branch" : {
-            "covered" : 233,
+            "covered" : 235,
             "error" : 17,
-            "percentage" : 93.2,
-            "total" : 250,
+            "percentage" : 93.2539682539683,
+            "total" : 252,
             "uncoverable" : 0
          },
          "condition" : {
@@ -187,10 +187,10 @@
             "uncoverable" : 0
          },
          "statement" : {
-            "covered" : 976,
+            "covered" : 979,
             "error" : 14,
-            "percentage" : 98.5858585858586,
-            "total" : 990
+            "percentage" : 98.5901309164149,
+            "total" : 993
          },
          "subroutine" : {
             "covered" : 250,
@@ -198,10 +198,10 @@
             "total" : 250
          },
          "total" : {
-            "covered" : 1505,
+            "covered" : 1510,
             "error" : 45,
-            "percentage" : 97.0967741935484,
-            "total" : 1550,
+            "percentage" : 97.1061093247588,
+            "total" : 1555,
             "uncoverable" : 0
          }
       },
@@ -284,10 +284,10 @@
       },
       "blib/lib/App/Project/Doctor/Check/CpanReadiness.pm" : {
          "branch" : {
-            "covered" : 17,
+            "covered" : 19,
             "error" : 1,
-            "percentage" : 94.4444444444444,
-            "total" : 18,
+            "percentage" : 95,
+            "total" : 20,
             "uncoverable" : 0
          },
          "condition" : {
@@ -298,9 +298,9 @@
             "uncoverable" : 0
          },
          "statement" : {
-            "covered" : 54,
+            "covered" : 57,
             "percentage" : 100,
-            "total" : 54
+            "total" : 57
          },
          "subroutine" : {
             "covered" : 13,
@@ -308,10 +308,10 @@
             "total" : 13
          },
          "total" : {
-            "covered" : 87,
+            "covered" : 92,
             "error" : 3,
-            "percentage" : 96.6666666666667,
-            "total" : 90,
+            "percentage" : 96.8421052631579,
+            "total" : 95,
             "uncoverable" : 0
          }
       },

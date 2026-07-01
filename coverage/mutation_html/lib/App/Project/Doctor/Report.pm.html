@@ -1,0 +1,777 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Project/Doctor/Report.pm</h1>
+<div class="nav"><a href="Fixer.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
+</div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 100.00%<br>
+TER3 (LCSAJ): 100.0% (5/5)<br>
+Approximate LCSAJ segments: 29<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Project::Doctor::Report;
+</span><span class="">    2: 
+</span><span class="">    3: # A Report aggregates all Finding objects produced by check plugins and
+</span><span class="">    4: # renders them as human-readable text, machine-readable JSON, or TAP output
+</span><span class="">    5: # for CI pipelines.  It also tracks the overall pass/fail exit code.
+</span><span class="">    6: 
+</span><span class="">    7: use strict;
+</span><span class="">    8: use warnings;
+</span><span class="">    9: use autodie qw(:all);
+</span><span class="">   10: 
+</span><span class="">   11: # croak dies at the caller&#39;s location; carp warns there.
+</span><span class="">   12: use Carp qw(croak carp);
+</span><span class="">   13: # Readonly prevents accidental mutation of constants after they are defined.
+</span><span class="">   14: use Readonly;
+</span><span class="">   15: # blessed() lets us confirm that add_findings() received real Finding objects.
+</span><span class="">   16: use Scalar::Util qw(blessed);
+</span><span class="">   17: # validate_strict enforces parameter schemas; not used by new() (takes no args).
+</span><span class="">   18: use Params::Validate::Strict qw(validate_strict);
+</span><span class="">   19: 
+</span><span class="">   20: our $VERSION = &#39;0.02&#39;;
+</span><span class="">   21: 
+</span><span class="">   22: # ---------------------------------------------------------------------------
+</span><span class="">   23: # Constants
+</span><span class="">   24: # ---------------------------------------------------------------------------
+</span><span class="">   25: 
+</span><span class="">   26: # The icons shown at the start of each text-report line, keyed by severity.
+</span><span class="">   27: Readonly::Hash my %ICON =&gt; (
+</span><span class="">   28: 	pass    =&gt; &#39;[v]&#39;,    # Healthy -- no action needed
+</span><span class="">   29: 	error   =&gt; &#39;[X]&#39;,    # Broken -- must be fixed
+</span><span class="">   30: 	warning =&gt; &#39;[!]&#39;,    # Suspicious -- should be reviewed
+</span><span class="">   31: 	info    =&gt; &#39;[i]&#39;,    # Informational -- no action needed
+</span><span class="">   32: );
+</span><span class="">   33: 
+</span><span class="">   34: # Numeric rank used to pick the &quot;worst&quot; severity in a group of findings.
+</span><span class="">   35: # Higher number = more severe; error is always the worst.
+</span><span class="">   36: Readonly::Hash my %SEV_RANK =&gt; (error =&gt; 3, warning =&gt; 2, info =&gt; 1, pass =&gt; 0);
+</span><span class="">   37: 
+</span><span class="">   38: # The column width reserved for the check name in the text report.
+</span><span class="">   39: # Chosen to accommodate the longest default check name (&#39;CpanReadiness&#39; = 13 chars).
+</span><span class="">   40: Readonly::Scalar my $LABEL_WIDTH =&gt; 18;
+</span><span class="">   41: 
+</span><span class="">   42: # ---------------------------------------------------------------------------
+</span><span class="">   43: # Constructor
+</span><span class="">   44: # ---------------------------------------------------------------------------
+</span><span class="">   45: 
+</span><span class="">   46: sub new {
+</span><span class="">   47: 	# Report takes no constructor arguments; start with an empty findings list.
+</span><span class="">   48: 	my ($class, %args) = @_;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   49: 	return bless { _findings =&gt; [] }, $class;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   50: }
+</span><span class="">   51: 
+</span><span class="">   52: # ---------------------------------------------------------------------------
+</span><span class="">   53: # Mutator
+</span><span class="">   54: # ---------------------------------------------------------------------------
+</span><span class="">   55: 
+</span><span class="">   56: =head2 add_findings( @findings )
+</span><span class="">   57: 
+</span><span class="">   58: Appends one or more L&lt;App::Project::Doctor::Finding&gt; objects.
+</span><span class="">   59: Croaks on non-Finding arguments.
+</span><span class="">   60: 
+</span><span class="">   61: =cut
+</span><span class="">   62: 
+</span><span class="">   63: sub add_findings {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">64 → 65 → 73</span></span>   64: 	my ($self, @findings) = @_;
+</span><span class="">   65: 	for my $f (@findings) {
+</span><span class="">   66: 		# Validate each element to catch bugs where a check returns a string
+</span><span class="">   67: 		# or undef instead of a real Finding object.
+</span><span class="">   68: 		croak &#39;Expected an App::Project::Doctor::Finding&#39;
+</span><span class="">   69: 			unless blessed($f) &amp;&amp; $f-&gt;isa(&#39;App::Project::Doctor::Finding&#39;);
+</span><span class="">   70: 		push @{ $self-&gt;{_findings} }, $f;
+</span><span class="">   71: 	}
+</span><span class="">   72: 	# Return $self so callers can chain: $report-&gt;add_findings(...)-&gt;render_text.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   73: 	return $self;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   74: }
+</span><span class="">   75: 
+</span><span class="">   76: # ---------------------------------------------------------------------------
+</span><span class="">   77: # Accessors / filters
+</span><span class="">   78: # ---------------------------------------------------------------------------
+</span><span class="">   79: 
+</span><span class="">   80: # Return every finding in insertion order (used by render_* methods).
+</span><span class="">   81: sub all_findings { @{ $_[0]-&gt;{_findings} } }
+</span><span class="">   82: # Return only the findings with severity &#39;error&#39;.
+</span><span class="">   83: sub errors       { grep { $_-&gt;severity eq &#39;error&#39;   } @{ $_[0]-&gt;{_findings} } }
+</span><span class="">   84: # Return only the findings with severity &#39;warning&#39;.
+</span><span class="">   85: sub warnings     { grep { $_-&gt;severity eq &#39;warning&#39; } @{ $_[0]-&gt;{_findings} } }
+</span><span class="">   86: # Return only the findings with severity &#39;pass&#39;.
+</span><span class="">   87: sub passes       { grep { $_-&gt;severity eq &#39;pass&#39;    } @{ $_[0]-&gt;{_findings} } }
+</span><span class="">   88: # Return only the findings that carry an automated fix coderef.
+</span><span class="">   89: sub fixable      { grep { $_-&gt;is_fixable             } @{ $_[0]-&gt;{_findings} } }
+</span><span class="">   90: 
+</span><span class="">   91: # has_errors returns 1/0 (not just truthy) for type-safe callers.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   92: sub has_errors   { (scalar($_[0]-&gt;errors)   &gt; 0) ? 1 : 0 }
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   93: sub has_warnings { (scalar($_[0]-&gt;warnings) &gt; 0) ? 1 : 0 }
+</span><p> <b> Mutants (Total: 3, Killed: 3, Survived: 0)</b><p><span class="">   94: 
+</span><span class="">   95: =head2 exit_code
+</span><span class="">   96: 
+</span><span class="">   97: Returns 0 (clean) or 1 (errors present).
+</span><span class="">   98: 
+</span><span class="">   99: =cut
+</span><span class="">  100: 
+</span><span class="">  101: # The process should exit 1 if any finding is an error, 0 otherwise.
+</span><span class="">  102: sub exit_code { $_[0]-&gt;has_errors ? 1 : 0 }
+</span><span class="">  103: 
+</span><span class="">  104: # ---------------------------------------------------------------------------
+</span><span class="">  105: # Rendering
+</span><span class="">  106: # ---------------------------------------------------------------------------
+</span><span class="">  107: 
+</span><span class="">  108: =head2 render_text( %opts )
+</span><span class="">  109: 
+</span><span class="">  110: Returns the full text report.  Accepted options: C&lt;verbose&gt; (bool).
+</span><span class="">  111: 
+</span><span class="">  112: =cut
+</span><span class="">  113: 
+</span><span class="">  114: sub render_text {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">115 → 122 → 133</span></span>  115: 	my ($self, %opts) = @_;
+</span><span class="">  116: 	# verbose mode adds per-finding detail lines under each check summary.
+</span><span class="">  117: 	my $verbose = $opts{verbose} // 0;
+</span><span class="">  118: 
+</span><span class="">  119: 	# Group findings by check name while preserving the insertion order of
+</span><span class="">  120: 	# the first finding seen for each check.  This keeps the output stable.
+</span><span class="">  121: 	my (%by_check, @order);
+</span><span class="">  122: 	for my $f ($self-&gt;all_findings) {
+</span><span class="">  123: 		my $name = $f-&gt;check_name;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  124: 		unless (exists $by_check{$name}) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  125: 			# First time we see this check name -- record its position.
+</span><span class="">  126: 			push @order, $name;
+</span><span class="">  127: 			$by_check{$name} = [];
+</span><span class="">  128: 		}
+</span><span class="">  129: 		push @{ $by_check{$name} }, $f;
+</span><span class="">  130: 	}
+</span><span class="">  131: 
+</span><span class="">  132: 	# Build the output one line at a time and join at the end.
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">133 → 134 → 160</span></span>  133: 	my @lines;
+</span><span class="">  134: 	for my $name (@order) {
+</span><span class="">  135: 		my @group = @{ $by_check{$name} };
+</span><span class="">  136: 		# Choose the worst severity in this group to pick the icon.
+</span><span class="">  137: 		my $sev   = _worst_severity(\@group);
+</span><span class="">  138: 		my $icon  = $ICON{$sev};    # Severity is always valid; no fallback needed.
+</span><span class="">  139: 
+</span><span class="">  140: 		# Use the first non-pass finding as the summary line for mixed groups.
+</span><span class="">  141: 		my ($lead) = grep { $_-&gt;severity ne &#39;pass&#39; } @group;
+</span><span class="">  142: 		my $summary = $lead ? $lead-&gt;message : $group[0]-&gt;message;
+</span><span class="">  143: 
+</span><span class="">  144: 		# Format: icon  check-name (padded)  summary message
+</span><span class="">  145: 		push @lines, sprintf(&#39;  %-4s  %-*s  %s&#39;, $icon, $LABEL_WIDTH, $name, $summary);
+</span><span class="">  146: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  147: 		if ($verbose) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  148: 			# In verbose mode, print each non-pass finding with its detail.
+</span><span class="">  149: 			for my $f (@group) {
+</span><span class="">  150: 				# Skip pass findings in verbose mode -- they have no useful detail.
+</span><span class="">  151: 				next if $f-&gt;severity eq &#39;pass&#39;;
+</span><span class="">  152: 				push @lines, sprintf(&#39;        -&gt; %s&#39;, $f-&gt;message);
+</span><span class="">  153: 				# Only print the detail line when there is something to show.
+</span><span class="">  154: 				push @lines, sprintf(&#39;           %s&#39;, $f-&gt;detail) if $f-&gt;detail;
+</span><span class="">  155: 			}
+</span><span class="">  156: 		}
+</span><span class="">  157: 	}
+</span><span class="">  158: 
+</span><span class="">  159: 	# Print a one-line summary of error/warning counts below the check table.
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">160 → 169 → 180</span></span>  160: 	my $ec = scalar($self-&gt;errors);
+</span><span class="">  161: 	my $wc = scalar($self-&gt;warnings);
+</span><span class="">  162: 	push @lines, &#39;&#39;;    # Blank line before the summary.
+</span><span class="">  163: 	push @lines, $ec || $wc
+</span><span class="">  164: 		? join(&#39; - &#39;, ($ec ? &quot;$ec error(s)&quot; : ()), ($wc ? &quot;$wc warning(s)&quot; : ()))
+</span><span class="">  165: 		: &#39;No errors or warnings.&#39;;
+</span><span class="">  166: 
+</span><span class="">  167: 	# If there are fixable findings, show them and hint that the user can apply them.
+</span><span class="">  168: 	my @fixable = $self-&gt;fixable;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  169: 	if (@fixable) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  170: 		push @lines, &#39;&#39;;
+</span><span class="">  171: 		push @lines, &#39;Suggested fixes:&#39;;
+</span><span class="">  172: 		my $i = 0;
+</span><span class="">  173: 		# Number each fix starting at 1 for the interactive prompt that follows.
+</span><span class="">  174: 		push @lines, sprintf(&#39;  [%d] %s&#39;, ++$i, $_-&gt;message) for @fixable;
+</span><span class="">  175: 		push @lines, &#39;&#39;;
+</span><span class="">  176: 		push @lines, &#39;Would you like me to apply them? [Y/n]&#39;;
+</span><span class="">  177: 	}
+</span><span class="">  178: 
+</span><span class="">  179: 	# Join with newlines and add a trailing newline for clean shell output.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  180: 	return join(&quot;\n&quot;, @lines) . &quot;\n&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  181: }
+</span><span class="">  182: 
+</span><span class="">  183: =head2 render_json
+</span><span class="">  184: 
+</span><span class="">  185: Returns findings as a pretty-printed JSON string (requires L&lt;JSON::MaybeXS&gt;).
+</span><span class="">  186: 
+</span><span class="">  187: =cut
+</span><span class="">  188: 
+</span><span class="">  189: sub render_json {
+</span><span class="">  190: 	my $self = shift;
+</span><span class="">  191: 	# JSON::MaybeXS is loaded lazily so it is only required when --format=json.
+</span><span class="">  192: 	require JSON::MaybeXS;
+</span><span class="">  193: 	# canonical =&gt; 1 sorts keys so the output is diff-friendly.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  194: 	return JSON::MaybeXS-&gt;new(utf8 =&gt; 1, pretty =&gt; 1, canonical =&gt; 1)
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  195: 	                    -&gt;encode([ map { $_-&gt;to_hash } $self-&gt;all_findings ]);
+</span><span class="">  196: }
+</span><span class="">  197: 
+</span><span class="">  198: =head2 render_tap
+</span><span class="">  199: 
+</span><span class="">  200: Returns a TAP-format string for CI pipeline consumption.
+</span><span class="">  201: 
+</span><span class="">  202: =cut
+</span><span class="">  203: 
+</span><span class="">  204: sub render_tap {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">205 → 210 → 216</span></span>  205: 	my $self     = shift;
+</span><span class="">  206: 	my @findings = $self-&gt;all_findings;
+</span><span class="">  207: 	# TAP header declares how many tests will follow.
+</span><span class="">  208: 	my @lines    = (&#39;1..&#39; . scalar @findings);
+</span><span class="">  209: 	my $n        = 0;
+</span><span class="">  210: 	for my $f (@findings) {
+</span><span class="">  211: 		$n++;
+</span><span class="">  212: 		# pass and info severities are &quot;ok&quot;; error and warning are &quot;not ok&quot;.
+</span><span class="">  213: 		my $ok = $f-&gt;severity =~ /^(?:pass|info)$/ ? &#39;ok&#39; : &#39;not ok&#39;;
+</span><span class="">  214: 		push @lines, sprintf(&#39;%s %d - [%s] %s&#39;, $ok, $n, $f-&gt;check_name, $f-&gt;message);
+</span><span class="">  215: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  216: 	return join(&quot;\n&quot;, @lines) . &quot;\n&quot;;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  217: }
+</span><span class="">  218: 
+</span><span class="">  219: # ---------------------------------------------------------------------------
+</span><span class="">  220: # Private helpers
+</span><span class="">  221: # ---------------------------------------------------------------------------
+</span><span class="">  222: 
+</span><span class="">  223: # Purpose:    Find the most severe severity string in a group of findings.
+</span><span class="">  224: # Entry:      $group is a non-empty arrayref of Finding objects.
+</span><span class="">  225: # Exit:       String -- one of &#39;error&#39;, &#39;warning&#39;, &#39;info&#39;, &#39;pass&#39;.
+</span><span class="">  226: # Side effects: None.
+</span><span class="">  227: sub _worst_severity {
+</span><span class="">  228: 	my $group = shift;
+</span><span class="">  229: 	# Sort by numeric rank (descending) and take the first (= highest) value.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  230: 	return (sort { $SEV_RANK{$b} &lt;=&gt; $SEV_RANK{$a} } map { $_-&gt;severity } @{$group})[0];
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  231: }
+</span><span class="">  232: 
+</span><span class="">  233: 1;
+</span><span class="">  234: 
+</span><span class="">  235: __END__
+</span><span class="">  236: 
+</span><span class="">  237: =head1 NAME
+</span><span class="">  238: 
+</span><span class="">  239: App::Project::Doctor::Report - Aggregate and render diagnostic findings
+</span><span class="">  240: 
+</span><span class="">  241: =head1 VERSION
+</span><span class="">  242: 
+</span><span class="">  243: 0.02
+</span><span class="">  244: 
+</span><span class="">  245: =head1 SYNOPSIS
+</span><span class="">  246: 
+</span><span class="">  247:   use App::Project::Doctor::Report;
+</span><span class="">  248: 
+</span><span class="">  249:   my $report = App::Project::Doctor::Report-&gt;new;
+</span><span class="">  250:   $report-&gt;add_findings(@findings);
+</span><span class="">  251:   print $report-&gt;render_text(verbose =&gt; 1);
+</span><span class="">  252:   exit $report-&gt;exit_code;
+</span><span class="">  253: 
+</span><span class="">  254: =head1 DESCRIPTION
+</span><span class="">  255: 
+</span><span class="">  256: Collects L&lt;App::Project::Doctor::Finding&gt; objects from all checks and renders
+</span><span class="">  257: them as text, JSON, or TAP.
+</span><span class="">  258: 
+</span><span class="">  259: =head1 CONSTRUCTOR
+</span><span class="">  260: 
+</span><span class="">  261: =head2 new
+</span><span class="">  262: 
+</span><span class="">  263: Creates an empty report ready to receive findings.
+</span><span class="">  264: 
+</span><span class="">  265: =head3 API SPECIFICATION
+</span><span class="">  266: 
+</span><span class="">  267: =head4 Input
+</span><span class="">  268: 
+</span><span class="">  269: None.
+</span><span class="">  270: 
+</span><span class="">  271: =head4 Output
+</span><span class="">  272: 
+</span><span class="">  273: Blessed hashref of type C&lt;App::Project::Doctor::Report&gt;.
+</span><span class="">  274: 
+</span><span class="">  275: =head3 FORMAL SPECIFICATION
+</span><span class="">  276: 
+</span><span class="">  277:   new : () -&gt; Report
+</span><span class="">  278:   new () == { findings : [] }
+</span><span class="">  279: 
+</span><span class="">  280: =head1 METHODS
+</span><span class="">  281: 
+</span><span class="">  282: =head2 add_findings( @findings )
+</span><span class="">  283: 
+</span><span class="">  284: =head3 API SPECIFICATION
+</span><span class="">  285: 
+</span><span class="">  286: =head4 Input
+</span><span class="">  287: 
+</span><span class="">  288:   @findings : List of App::Project::Doctor::Finding
+</span><span class="">  289: 
+</span><span class="">  290: =head4 Output
+</span><span class="">  291: 
+</span><span class="">  292: Returns C&lt;$self&gt; for chaining.  Croaks if any element is not an
+</span><span class="">  293: C&lt;App::Project::Doctor::Finding&gt;.
+</span><span class="">  294: 
+</span><span class="">  295: =head2 all_findings
+</span><span class="">  296: 
+</span><span class="">  297: Returns every accumulated Finding in insertion order.
+</span><span class="">  298: 
+</span><span class="">  299: =head3 API SPECIFICATION
+</span><span class="">  300: 
+</span><span class="">  301: =head4 Input
+</span><span class="">  302: 
+</span><span class="">  303: None.
+</span><span class="">  304: 
+</span><span class="">  305: =head4 Output
+</span><span class="">  306: 
+</span><span class="">  307: List of C&lt;App::Project::Doctor::Finding&gt;.
+</span><span class="">  308: 
+</span><span class="">  309: =head2 errors / warnings / passes
+</span><span class="">  310: 
+</span><span class="">  311: Return the subset of accumulated findings with the matching severity.
+</span><span class="">  312: 
+</span><span class="">  313: =head3 API SPECIFICATION
+</span><span class="">  314: 
+</span><span class="">  315: =head4 Input
+</span><span class="">  316: 
+</span><span class="">  317: None.
+</span><span class="">  318: 
+</span><span class="">  319: =head4 Output
+</span><span class="">  320: 
+</span><span class="">  321: List of C&lt;App::Project::Doctor::Finding&gt;.
+</span><span class="">  322: 
+</span><span class="">  323: =head2 fixable
+</span><span class="">  324: 
+</span><span class="">  325: Returns findings that carry an automated fix coderef.
+</span><span class="">  326: 
+</span><span class="">  327: =head3 API SPECIFICATION
+</span><span class="">  328: 
+</span><span class="">  329: =head4 Input
+</span><span class="">  330: 
+</span><span class="">  331: None.
+</span><span class="">  332: 
+</span><span class="">  333: =head4 Output
+</span><span class="">  334: 
+</span><span class="">  335: List of C&lt;App::Project::Doctor::Finding&gt;.
+</span><span class="">  336: 
+</span><span class="">  337: =head2 has_errors
+</span><span class="">  338: 
+</span><span class="">  339: Returns 1 when the report contains at least one error-severity finding, 0 otherwise.
+</span><span class="">  340: 
+</span><span class="">  341: =head3 API SPECIFICATION
+</span><span class="">  342: 
+</span><span class="">  343: =head4 Input
+</span><span class="">  344: 
+</span><span class="">  345: None.
+</span><span class="">  346: 
+</span><span class="">  347: =head4 Output
+</span><span class="">  348: 
+</span><span class="">  349: Integer 1 or 0.
+</span><span class="">  350: 
+</span><span class="">  351: =head2 has_warnings
+</span><span class="">  352: 
+</span><span class="">  353: Returns 1 when the report contains at least one warning-severity finding, 0 otherwise.
+</span><span class="">  354: 
+</span><span class="">  355: =head3 API SPECIFICATION
+</span><span class="">  356: 
+</span><span class="">  357: =head4 Input
+</span><span class="">  358: 
+</span><span class="">  359: None.
+</span><span class="">  360: 
+</span><span class="">  361: =head4 Output
+</span><span class="">  362: 
+</span><span class="">  363: Integer 1 or 0.
+</span><span class="">  364: 
+</span><span class="">  365: =head2 exit_code
+</span><span class="">  366: 
+</span><span class="">  367: =head3 API SPECIFICATION
+</span><span class="">  368: 
+</span><span class="">  369: =head4 Input
+</span><span class="">  370: 
+</span><span class="">  371: None.
+</span><span class="">  372: 
+</span><span class="">  373: =head4 Output
+</span><span class="">  374: 
+</span><span class="">  375: Integer 0 or 1.
+</span><span class="">  376: 
+</span><span class="">  377: =head2 render_text( %opts )
+</span><span class="">  378: 
+</span><span class="">  379: =head3 API SPECIFICATION
+</span><span class="">  380: 
+</span><span class="">  381: =head4 Input
+</span><span class="">  382: 
+</span><span class="">  383:   verbose : Bool  default 0
+</span><span class="">  384: 
+</span><span class="">  385: =head4 Output
+</span><span class="">  386: 
+</span><span class="">  387: String.
+</span><span class="">  388: 
+</span><span class="">  389: =head2 render_json
+</span><span class="">  390: 
+</span><span class="">  391: =head3 API SPECIFICATION
+</span><span class="">  392: 
+</span><span class="">  393: =head4 Input
+</span><span class="">  394: 
+</span><span class="">  395: None.
+</span><span class="">  396: 
+</span><span class="">  397: =head4 Output
+</span><span class="">  398: 
+</span><span class="">  399: UTF-8 JSON string.
+</span><span class="">  400: 
+</span><span class="">  401: =head2 render_tap
+</span><span class="">  402: 
+</span><span class="">  403: =head3 API SPECIFICATION
+</span><span class="">  404: 
+</span><span class="">  405: =head4 Input
+</span><span class="">  406: 
+</span><span class="">  407: None.
+</span><span class="">  408: 
+</span><span class="">  409: =head4 Output
+</span><span class="">  410: 
+</span><span class="">  411: TAP string.
+</span><span class="">  412: 
+</span><span class="">  413: =head3 MESSAGES
+</span><span class="">  414: 
+</span><span class="">  415:   Code | Trigger | Resolution
+</span><span class="">  416:   -----|---------|----------
+</span><span class="">  417:   (none currently defined)
+</span><span class="">  418: 
+</span><span class="">  419: =head3 FORMAL SPECIFICATION
+</span><span class="">  420: 
+</span><span class="">  421:   Report == { findings : [Finding] }
+</span><span class="">  422: 
+</span><span class="">  423:   all_findings : Report -&gt; [Finding]
+</span><span class="">  424:   all_findings r == findings r
+</span><span class="">  425: 
+</span><span class="">  426:   errors : Report -&gt; [Finding]
+</span><span class="">  427:   errors r == { f in findings r | severity f = error }
+</span><span class="">  428: 
+</span><span class="">  429:   warnings : Report -&gt; [Finding]
+</span><span class="">  430:   warnings r == { f in findings r | severity f = warning }
+</span><span class="">  431: 
+</span><span class="">  432:   passes : Report -&gt; [Finding]
+</span><span class="">  433:   passes r == { f in findings r | severity f = pass }
+</span><span class="">  434: 
+</span><span class="">  435:   fixable : Report -&gt; [Finding]
+</span><span class="">  436:   fixable r == { f in findings r | is_fixable f }
+</span><span class="">  437: 
+</span><span class="">  438:   has_errors : Report -&gt; Bool
+</span><span class="">  439:   has_errors r == |errors r| &gt; 0
+</span><span class="">  440: 
+</span><span class="">  441:   has_warnings : Report -&gt; Bool
+</span><span class="">  442:   has_warnings r == |warnings r| &gt; 0
+</span><span class="">  443: 
+</span><span class="">  444:   exit_code : Report -&gt; {0,1}
+</span><span class="">  445:   exit_code r == if has_errors r then 1 else 0
+</span><span class="">  446: 
+</span><span class="">  447: =head1 AUTHOR
+</span><span class="">  448: 
+</span><span class="">  449: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  450: 
+</span><span class="">  451: =head1 LICENSE
+</span><span class="">  452: 
+</span><span class="">  453: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  454: This library is free software; you can redistribute it and/or modify
+</span><span class="">  455: it under the same terms as Perl itself.
+</span><span class="">  456: 
+</span><span class="">  457: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	

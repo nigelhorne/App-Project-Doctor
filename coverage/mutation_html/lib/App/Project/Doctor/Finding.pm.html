@@ -1,0 +1,627 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Project/Doctor/Finding.pm</h1>
+<div class="nav"><a href="Context.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
+ <a href="Fixer.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 100.00%<br>
+TER3 (LCSAJ): -<br>
+Approximate LCSAJ segments: 11<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Project::Doctor::Finding;
+</span><span class="">    2: 
+</span><span class="">    3: # A Finding is a single diagnostic result produced by a check plugin.
+</span><span class="">    4: # It carries a severity level (error/warning/pass/info), a human-readable
+</span><span class="">    5: # message, an optional automated fix coderef, and optional file/line location.
+</span><span class="">    6: 
+</span><span class="">    7: use strict;
+</span><span class="">    8: use warnings;
+</span><span class="">    9: use autodie qw(:all);
+</span><span class="">   10: 
+</span><span class="">   11: # croak reports errors at the caller&#39;s location rather than inside this module.
+</span><span class="">   12: use Carp qw(croak carp);
+</span><span class="">   13: # Params::Get normalises @_ into a hashref, handling both hash and hashref args.
+</span><span class="">   14: use Params::Get;
+</span><span class="">   15: # validate_strict enforces the parameter schema and throws on any violation.
+</span><span class="">   16: use Params::Validate::Strict qw(validate_strict);
+</span><span class="">   17: # Readonly creates truly immutable constants -- assigning to them throws at runtime.
+</span><span class="">   18: use Readonly;
+</span><span class="">   19: 
+</span><span class="">   20: our $VERSION = &#39;0.02&#39;;
+</span><span class="">   21: 
+</span><span class="">   22: # ---------------------------------------------------------------------------
+</span><span class="">   23: # Constants
+</span><span class="">   24: # ---------------------------------------------------------------------------
+</span><span class="">   25: 
+</span><span class="">   26: # Maps each severity to the short bracketed icon shown in text-report lines.
+</span><span class="">   27: Readonly::Hash my %SEVERITY_ICON =&gt; (
+</span><span class="">   28: 	error   =&gt; &#39;[X]&#39;,    # Something is broken and must be fixed
+</span><span class="">   29: 	warning =&gt; &#39;[!]&#39;,    # Something is suspicious and should be reviewed
+</span><span class="">   30: 	pass    =&gt; &#39;[v]&#39;,    # This item is healthy
+</span><span class="">   31: 	info    =&gt; &#39;[i]&#39;,    # Informational; no action required
+</span><span class="">   32: );
+</span><span class="">   33: 
+</span><span class="">   34: # Used by new() to reject unknown severity strings before storing them.
+</span><span class="">   35: # The keys here must exactly match the keys in %SEVERITY_ICON above.
+</span><span class="">   36: Readonly::Hash my %VALID_SEVERITY =&gt; map { $_ =&gt; 1 } qw(error warning pass info);
+</span><span class="">   37: 
+</span><span class="">   38: # ---------------------------------------------------------------------------
+</span><span class="">   39: # Constructor
+</span><span class="">   40: # ---------------------------------------------------------------------------
+</span><span class="">   41: 
+</span><span class="">   42: sub new {
+</span><span class="">   43: 	my $class = shift;    # The package name, e.g. &#39;App::Project::Doctor::Finding&#39;
+</span><span class="">   44: 
+</span><span class="">   45: 	# Check &#39;message&#39; before running validate_strict so the caller gets our
+</span><span class="">   46: 	# descriptive error rather than a generic Params::Validate type error.
+</span><span class="">   47: 	my %raw = @_;
+</span><span class="">   48: 	croak &#39;message must be a non-empty string&#39;
+</span><span class="">   49: 		unless defined $raw{message} &amp;&amp; length $raw{message};
+</span><span class="">   50: 
+</span><span class="">   51: 	# validate_strict applies defaults, enforces types, and throws immediately
+</span><span class="">   52: 	# if anything is wrong.  It never returns undef -- it either returns the
+</span><span class="">   53: 	# validated hashref or dies.
+</span><span class="">   54: 	my $args = validate_strict(
+</span><span class="">   55: 		schema =&gt; {
+</span><span class="">   56: 			severity   =&gt; { type =&gt; &#39;scalar&#39;,  optional =&gt; 1, default =&gt; &#39;info&#39;    },
+</span><span class="">   57: 			message    =&gt; { type =&gt; &#39;scalar&#39;                                        },
+</span><span class="">   58: 			detail     =&gt; { type =&gt; &#39;scalar&#39;,  optional =&gt; 1, default =&gt; &#39;&#39;        },
+</span><span class="">   59: 			fix        =&gt; { type =&gt; &#39;coderef&#39;, optional =&gt; 1                       },
+</span><span class="">   60: 			check_name =&gt; { type =&gt; &#39;scalar&#39;,  optional =&gt; 1, default =&gt; &#39;Unknown&#39; },
+</span><span class="">   61: 			file       =&gt; { type =&gt; &#39;scalar&#39;,  optional =&gt; 1, default =&gt; &#39;&#39;        },
+</span><span class="">   62: 			line       =&gt; { type =&gt; &#39;integer&#39;, optional =&gt; 1, min =&gt; 1             },
+</span><span class="">   63: 		},
+</span><span class="">   64: 		args =&gt; Params::Get::get_params(undef, \@_) || {},
+</span><span class="">   65: 	);
+</span><span class="">   66: 
+</span><span class="">   67: 	# validate_strict only checks that severity is a scalar; we also need to
+</span><span class="">   68: 	# confirm it is one of our four known values.
+</span><span class="">   69: 	croak &quot;Invalid severity &#39;$args-&gt;{severity}&#39;&quot;
+</span><span class="">   70: 		unless $VALID_SEVERITY{ $args-&gt;{severity} };
+</span><span class="">   71: 
+</span><span class="">   72: 	# Bless the validated args hashref and return the new object.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   73: 	return bless $args, $class;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   74: }
+</span><span class="">   75: 
+</span><span class="">   76: # ---------------------------------------------------------------------------
+</span><span class="">   77: # Accessors  (all read-only -- attributes are set once in new() and never changed)
+</span><span class="">   78: # ---------------------------------------------------------------------------
+</span><span class="">   79: 
+</span><span class="">   80: # The importance level of this finding: error, warning, pass, or info.
+</span><span class="">   81: sub severity   { $_[0]-&gt;{severity}   }
+</span><span class="">   82: # The short human-readable description of the problem or result.
+</span><span class="">   83: sub message    { $_[0]-&gt;{message}    }
+</span><span class="">   84: # An optional longer explanation; empty string when not set.
+</span><span class="">   85: sub detail     { $_[0]-&gt;{detail}     }
+</span><span class="">   86: # The optional coderef called by Fixer to resolve the issue.
+</span><span class="">   87: sub fix        { $_[0]-&gt;{fix}        }
+</span><span class="">   88: # The name of the check that produced this finding (e.g. &#39;Tests&#39;).
+</span><span class="">   89: sub check_name { $_[0]-&gt;{check_name} }
+</span><span class="">   90: # Relative path to the affected file; empty string when not applicable.
+</span><span class="">   91: sub file       { $_[0]-&gt;{file}       }
+</span><span class="">   92: # Line number in the affected file; undef when not applicable.
+</span><span class="">   93: sub line       { $_[0]-&gt;{line}       }
+</span><span class="">   94: 
+</span><span class="">   95: # ---------------------------------------------------------------------------
+</span><span class="">   96: # Public methods
+</span><span class="">   97: # ---------------------------------------------------------------------------
+</span><span class="">   98: 
+</span><span class="">   99: =head2 is_fixable
+</span><span class="">  100: 
+</span><span class="">  101: Returns 1 when this finding carries an automated fix coderef, 0 otherwise.
+</span><span class="">  102: 
+</span><span class="">  103: =cut
+</span><span class="">  104: 
+</span><span class="">  105: # Return exactly 1 or 0 (not just truthy/falsy) so type-checked callers are happy.
+</span><span class="">  106: sub is_fixable { defined $_[0]-&gt;{fix} ? 1 : 0 }
+</span><span class="">  107: 
+</span><span class="">  108: # has_fix is a synonym for is_fixable kept for backward compatibility.
+</span><span class="">  109: # Both methods are part of the public API and must always agree.
+</span><span class="">  110: sub has_fix     { defined $_[0]-&gt;{fix} ? 1 : 0 }
+</span><span class="">  111: 
+</span><span class="">  112: =head2 icon
+</span><span class="">  113: 
+</span><span class="">  114: Returns the bracketed ASCII status icon for this finding&#39;s severity.
+</span><span class="">  115: 
+</span><span class="">  116: =cut
+</span><span class="">  117: 
+</span><span class="">  118: # Severity is always valid here because new() checked it against %VALID_SEVERITY,
+</span><span class="">  119: # and all valid severities have a matching entry in %SEVERITY_ICON.
+</span><span class="">  120: sub icon { $SEVERITY_ICON{ $_[0]-&gt;{severity} } }
+</span><span class="">  121: 
+</span><span class="">  122: =head2 to_hash
+</span><span class="">  123: 
+</span><span class="">  124: Serialises the finding to a plain hashref for JSON encoding.
+</span><span class="">  125: The C&lt;fix&gt; coderef is omitted.
+</span><span class="">  126: 
+</span><span class="">  127: =cut
+</span><span class="">  128: 
+</span><span class="">  129: sub to_hash {
+</span><span class="">  130: 	my $self = shift;
+</span><span class="">  131: 	# Build the base hashref with all fields that are always present.
+</span><span class="">  132: 	my %h = (
+</span><span class="">  133: 		severity   =&gt; $self-&gt;severity,
+</span><span class="">  134: 		message    =&gt; $self-&gt;message,
+</span><span class="">  135: 		detail     =&gt; $self-&gt;detail,
+</span><span class="">  136: 		check_name =&gt; $self-&gt;check_name,
+</span><span class="">  137: 		file       =&gt; $self-&gt;file,
+</span><span class="">  138: 	);
+</span><span class="">  139: 	# Only include &#39;line&#39; when it was actually set; absent means &quot;unknown location&quot;.
+</span><span class="">  140: 	$h{line} = $self-&gt;line if defined $self-&gt;line;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  141: 	return \%h;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  142: }
+</span><span class="">  143: 
+</span><span class="">  144: 1;
+</span><span class="">  145: 
+</span><span class="">  146: __END__
+</span><span class="">  147: 
+</span><span class="">  148: =head1 NAME
+</span><span class="">  149: 
+</span><span class="">  150: App::Project::Doctor::Finding - A single diagnostic finding produced by a check
+</span><span class="">  151: 
+</span><span class="">  152: =head1 VERSION
+</span><span class="">  153: 
+</span><span class="">  154: 0.02
+</span><span class="">  155: 
+</span><span class="">  156: =head1 SYNOPSIS
+</span><span class="">  157: 
+</span><span class="">  158:   use App::Project::Doctor::Finding;
+</span><span class="">  159: 
+</span><span class="">  160:   my $f = App::Project::Doctor::Finding-&gt;new(
+</span><span class="">  161:       severity   =&gt; &#39;error&#39;,
+</span><span class="">  162:       message    =&gt; &#39;No test files found under t/&#39;,
+</span><span class="">  163:       check_name =&gt; &#39;Tests&#39;,
+</span><span class="">  164:       fix        =&gt; sub {
+</span><span class="">  165:           my $ctx = shift;
+</span><span class="">  166:           # scaffold a basic test file
+</span><span class="">  167:       },
+</span><span class="">  168:   );
+</span><span class="">  169: 
+</span><span class="">  170:   printf &quot;%s %s\n&quot;, $f-&gt;icon, $f-&gt;message;
+</span><span class="">  171:   $f-&gt;fix-&gt;($ctx) if $f-&gt;is_fixable;
+</span><span class="">  172: 
+</span><span class="">  173: =head1 DESCRIPTION
+</span><span class="">  174: 
+</span><span class="">  175: A value object representing one diagnostic item emitted by an
+</span><span class="">  176: C&lt;App::Project::Doctor::Check::*&gt; plugin.  Each finding carries a severity
+</span><span class="">  177: level, a human-readable message, an optional file/line location, and an
+</span><span class="">  178: optional automated fix coderef.
+</span><span class="">  179: 
+</span><span class="">  180: =head1 CONSTRUCTOR
+</span><span class="">  181: 
+</span><span class="">  182: =head2 new( %args )
+</span><span class="">  183: 
+</span><span class="">  184:   my $finding = App::Project::Doctor::Finding-&gt;new(
+</span><span class="">  185:       severity   =&gt; &#39;error&#39;,   # required: error|warning|pass|info
+</span><span class="">  186:       message    =&gt; &#39;text&#39;,    # required non-empty string
+</span><span class="">  187:       detail     =&gt; &#39;...&#39;,     # optional extended explanation
+</span><span class="">  188:       fix        =&gt; sub {...}, # optional coderef ($ctx) -&gt; 1
+</span><span class="">  189:       check_name =&gt; &#39;Tests&#39;,   # optional, default &#39;Unknown&#39;
+</span><span class="">  190:       file       =&gt; &#39;lib/F.pm&#39;,# optional
+</span><span class="">  191:       line       =&gt; 42,        # optional positive integer
+</span><span class="">  192:   );
+</span><span class="">  193: 
+</span><span class="">  194: Croaks on invalid severity or empty message.
+</span><span class="">  195: 
+</span><span class="">  196: =head3 API SPECIFICATION
+</span><span class="">  197: 
+</span><span class="">  198: =head4 Input
+</span><span class="">  199: 
+</span><span class="">  200:   severity   : &#39;error&#39; | &#39;warning&#39; | &#39;pass&#39; | &#39;info&#39;   default &#39;info&#39;
+</span><span class="">  201:   message    : non-empty String
+</span><span class="">  202:   detail     : String                                    default &#39;&#39;
+</span><span class="">  203:   fix        : CodeRef ($ctx) -&gt; 1                       optional
+</span><span class="">  204:   check_name : String                                    default &#39;Unknown&#39;
+</span><span class="">  205:   file       : String                                    default &#39;&#39;
+</span><span class="">  206:   line       : positive Integer                          optional
+</span><span class="">  207: 
+</span><span class="">  208: =head4 Output
+</span><span class="">  209: 
+</span><span class="">  210: Blessed hashref of type C&lt;App::Project::Doctor::Finding&gt;.
+</span><span class="">  211: 
+</span><span class="">  212: =head1 ACCESSORS
+</span><span class="">  213: 
+</span><span class="">  214: C&lt;severity&gt;, C&lt;message&gt;, C&lt;detail&gt;, C&lt;fix&gt;, C&lt;check_name&gt;, C&lt;file&gt;, C&lt;line&gt;
+</span><span class="">  215: -- all read-only.
+</span><span class="">  216: 
+</span><span class="">  217: =head1 METHODS
+</span><span class="">  218: 
+</span><span class="">  219: =head2 is_fixable
+</span><span class="">  220: 
+</span><span class="">  221: Returns 1 when C&lt;fix&gt; is defined, 0 otherwise.
+</span><span class="">  222: 
+</span><span class="">  223: =head3 API SPECIFICATION
+</span><span class="">  224: 
+</span><span class="">  225: =head4 Input
+</span><span class="">  226: 
+</span><span class="">  227: None.
+</span><span class="">  228: 
+</span><span class="">  229: =head4 Output
+</span><span class="">  230: 
+</span><span class="">  231: Integer 1 or 0.
+</span><span class="">  232: 
+</span><span class="">  233: =head2 has_fix
+</span><span class="">  234: 
+</span><span class="">  235: Synonym for C&lt;is_fixable&gt;.  Both are part of the public API.
+</span><span class="">  236: 
+</span><span class="">  237: =head2 icon
+</span><span class="">  238: 
+</span><span class="">  239: Returns the severity icon string: C&lt;[v]&gt; pass, C&lt;[X]&gt; error, C&lt;[!]&gt; warning,
+</span><span class="">  240: C&lt;[i]&gt; info.
+</span><span class="">  241: 
+</span><span class="">  242: =head3 API SPECIFICATION
+</span><span class="">  243: 
+</span><span class="">  244: =head4 Input
+</span><span class="">  245: 
+</span><span class="">  246: None.
+</span><span class="">  247: 
+</span><span class="">  248: =head4 Output
+</span><span class="">  249: 
+</span><span class="">  250: String -- one of C&lt;[v]&gt;, C&lt;[X]&gt;, C&lt;[!]&gt;, C&lt;[i]&gt;.
+</span><span class="">  251: 
+</span><span class="">  252: =head2 to_hash
+</span><span class="">  253: 
+</span><span class="">  254: Returns a plain hashref suitable for JSON encoding.  C&lt;fix&gt; is excluded.
+</span><span class="">  255: 
+</span><span class="">  256: =head3 API SPECIFICATION
+</span><span class="">  257: 
+</span><span class="">  258: =head4 Input
+</span><span class="">  259: 
+</span><span class="">  260: None.
+</span><span class="">  261: 
+</span><span class="">  262: =head4 Output
+</span><span class="">  263: 
+</span><span class="">  264: HashRef with keys: severity, message, detail, check_name, file, line (if set).
+</span><span class="">  265: 
+</span><span class="">  266: =head3 MESSAGES
+</span><span class="">  267: 
+</span><span class="">  268:   Code | Trigger                       | Resolution
+</span><span class="">  269:   -----|-------------------------------|----------------------------
+</span><span class="">  270:   F001 | message is undef or empty     | Provide a non-empty message
+</span><span class="">  271:   F002 | severity is not a valid value | Use error|warning|pass|info
+</span><span class="">  272: 
+</span><span class="">  273: =head3 FORMAL SPECIFICATION
+</span><span class="">  274: 
+</span><span class="">  275:   Finding == [
+</span><span class="">  276:     severity   : SEVERITY,
+</span><span class="">  277:     message    : String,
+</span><span class="">  278:     detail     : String,
+</span><span class="">  279:     fix        : (Context -&gt; Bool) | undefined,
+</span><span class="">  280:     check_name : String,
+</span><span class="">  281:     file       : String,
+</span><span class="">  282:     line       : N | undefined
+</span><span class="">  283:   ]
+</span><span class="">  284: 
+</span><span class="">  285:   SEVERITY ::= error | warning | pass | info
+</span><span class="">  286: 
+</span><span class="">  287:   is_fixable : Finding -&gt; Bool
+</span><span class="">  288:   is_fixable f == (fix f /= undefined)
+</span><span class="">  289: 
+</span><span class="">  290: =head1 LIMITATIONS
+</span><span class="">  291: 
+</span><span class="">  292: The C&lt;fix&gt; coderef is not serialisable and is omitted from C&lt;to_hash&gt;.
+</span><span class="">  293: 
+</span><span class="">  294: Encapsulation of private helpers is enforced by convention only; a future
+</span><span class="">  295: migration to C&lt;Sub::Private&gt; in enforce mode is tracked as a TODO.
+</span><span class="">  296: 
+</span><span class="">  297: =head1 AUTHOR
+</span><span class="">  298: 
+</span><span class="">  299: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  300: 
+</span><span class="">  301: =head1 LICENSE
+</span><span class="">  302: 
+</span><span class="">  303: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  304: This library is free software; you can redistribute it and/or modify
+</span><span class="">  305: it under the same terms as Perl itself.
+</span><span class="">  306: 
+</span><span class="">  307: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	

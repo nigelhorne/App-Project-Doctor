@@ -1,0 +1,760 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Project/Doctor/Context.pm</h1>
+<div class="nav"><a href="Check/Tests.pm.html">⬅ Previous</a> <a href="../../../../../index.html">Index</a>
+ <a href="Finding.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 96.67%<br>
+TER3 (LCSAJ): 100.0% (2/2)<br>
+Approximate LCSAJ segments: 31<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Project::Doctor::Context;
+</span><span class="">    2: 
+</span><span class="">    3: # Context is the filesystem helper that every check plugin receives.
+</span><span class="">    4: # It encapsulates the distribution root path and provides safe, validated
+</span><span class="">    5: # access to files underneath it.  Checks must NEVER access the filesystem
+</span><span class="">    6: # directly -- they must always go through Context methods.
+</span><span class="">    7: 
+</span><span class="">    8: use strict;
+</span><span class="">    9: use warnings;
+</span><span class="">   10: use autodie qw(:all);
+</span><span class="">   11: 
+</span><span class="">   12: # croak dies with the caller&#39;s file/line so errors point at the plugin, not here.
+</span><span class="">   13: use Carp qw(croak carp);
+</span><span class="">   14: # Readonly makes constants truly immutable; mutation throws at runtime.
+</span><span class="">   15: use Readonly;
+</span><span class="">   16: # File::Spec builds cross-platform paths (handles Windows backslashes).
+</span><span class="">   17: use File::Spec;
+</span><span class="">   18: # File::Find is loaded without importing its &#39;find&#39; function to avoid namespace pollution.
+</span><span class="">   19: use File::Find ();
+</span><span class="">   20: # validate_strict enforces parameter schemas and throws immediately on failure.
+</span><span class="">   21: use Params::Validate::Strict qw(validate_strict);
+</span><span class="">   22: # Params::Get normalises @_ so both hash and hashref calling styles work.
+</span><span class="">   23: use Params::Get;
+</span><span class="">   24: 
+</span><span class="">   25: our $VERSION = &#39;0.02&#39;;
+</span><span class="">   26: 
+</span><span class="">   27: # ---------------------------------------------------------------------------
+</span><span class="">   28: # Constants
+</span><span class="">   29: # ---------------------------------------------------------------------------
+</span><span class="">   30: 
+</span><span class="">   31: # File extensions that identify Perl source files.
+</span><span class="">   32: # Used by perl_files() to filter results from _collect_files().
+</span><span class="">   33: Readonly::Array my @PERL_EXTENSIONS =&gt; qw(.pm .pl .t .PL);
+</span><span class="">   34: 
+</span><span class="">   35: # Standard build-system files; the first one found is returned by builder_file().
+</span><span class="">   36: Readonly::Array my @BUILDER_FILES   =&gt; qw(Makefile.PL Build.PL dist.ini cpanfile);
+</span><span class="">   37: 
+</span><span class="">   38: # ---------------------------------------------------------------------------
+</span><span class="">   39: # Constructor
+</span><span class="">   40: # ---------------------------------------------------------------------------
+</span><span class="">   41: 
+</span><span class="">   42: sub new {
+</span><span class="">   43: 	my $class = shift;
+</span><span class="">   44: 	# validate_strict normalises args, applies defaults, and throws on bad input.
+</span><span class="">   45: 	my $args = validate_strict(
+</span><span class="">   46: 		args =&gt; Params::Get::get_params(undef, \@_) || {},
+</span><span class="">   47: 		schema =&gt; {
+</span><span class="">   48: 			# root must be an existing directory; defaults to the current directory.
+</span><span class="">   49: 			root    =&gt; { type =&gt; &#39;scalar&#39;, optional =&gt; 1, default =&gt; &#39;.&#39; },
+</span><span class="">   50: 			# verbose is passed through to check plugins that want progress output.
+</span><span class="">   51: 			verbose =&gt; { type =&gt; &#39;scalar&#39;, optional =&gt; 1, default =&gt; 0   },
+</span><span class="">   52: 		},
+</span><span class="">   53: 	);
+</span><span class="">   54: 
+</span><span class="">   55: 	# Confirm root is an actual directory before we store it.
+</span><span class="">   56: 	croak &quot;root &#39;$args-&gt;{root}&#39; is not a directory&quot;
+</span><span class="">   57: 		unless -d $args-&gt;{root};
+</span><span class="">   58: 
+</span><span class="">   59: 	# Convert root to an absolute path so all downstream operations are stable.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   60: 	return bless {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   61: 		root    =&gt; File::Spec-&gt;rel2abs($args-&gt;{root}),
+</span><span class="">   62: 		verbose =&gt; $args-&gt;{verbose},
+</span><span class="">   63: 	}, $class;
+</span><span class="">   64: }
+</span><span class="">   65: 
+</span><span class="">   66: # ---------------------------------------------------------------------------
+</span><span class="">   67: # Accessors  (read-only after construction)
+</span><span class="">   68: # ---------------------------------------------------------------------------
+</span><span class="">   69: 
+</span><span class="">   70: # The absolute path to the distribution root directory.
+</span><span class="">   71: sub root    { $_[0]-&gt;{root}    }
+</span><span class="">   72: # Whether verbose progress messages should be emitted.
+</span><span class="">   73: sub verbose { $_[0]-&gt;{verbose} }
+</span><span class="">   74: 
+</span><span class="">   75: # ---------------------------------------------------------------------------
+</span><span class="">   76: # Public methods
+</span><span class="">   77: # ---------------------------------------------------------------------------
+</span><span class="">   78: 
+</span><span class="">   79: =head2 has_file( $rel_path )
+</span><span class="">   80: 
+</span><span class="">   81: Returns true when C&lt;$rel_path&gt; (relative to root) exists on disk.
+</span><span class="">   82: 
+</span><span class="">   83: =cut
+</span><span class="">   84: 
+</span><span class="">   85: sub has_file {
+</span><span class="">   86: 	my ($self, $rel_path) = @_;
+</span><span class="">   87: 	croak &#39;has_file requires a relative path&#39; unless defined $rel_path;
+</span><span class="">   88: 	# Route through abs_path so the path-traversal security check is inherited.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   89: 	return -e $self-&gt;abs_path($rel_path);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   90: }
+</span><span class="">   91: 
+</span><span class="">   92: =head2 abs_path( $rel_path )
+</span><span class="">   93: 
+</span><span class="">   94: Returns the absolute filesystem path for C&lt;$rel_path&gt;.
+</span><span class="">   95: Croaks if C&lt;$rel_path&gt; contains C&lt;..&gt; as a path component (path traversal).
+</span><span class="">   96: 
+</span><span class="">   97: =cut
+</span><span class="">   98: 
+</span><span class="">   99: sub abs_path {
+</span><span class="">  100: 	my ($self, $rel_path) = @_;
+</span><span class="">  101: 	croak &#39;abs_path requires a relative path&#39; unless defined $rel_path;
+</span><span class="">  102: 	# Security: reject any path component that is exactly &#39;..&#39;.
+</span><span class="">  103: 	# This prevents a crafted check name or filename from escaping the root.
+</span><span class="">  104: 	croak &quot;Path traversal detected in &#39;$rel_path&#39;&quot;
+</span><span class="">  105: 		if grep { $_ eq &#39;..&#39; } File::Spec-&gt;splitdir($rel_path);
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  106: 	return File::Spec-&gt;catfile($self-&gt;root, $rel_path);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  107: }
+</span><span class="">  108: 
+</span><span class="">  109: =head2 slurp( $rel_path )
+</span><span class="">  110: 
+</span><span class="">  111: Reads and returns the entire UTF-8 content of C&lt;$rel_path&gt;.
+</span><span class="">  112: Croaks if the file does not exist.
+</span><span class="">  113: 
+</span><span class="">  114: =cut
+</span><span class="">  115: 
+</span><span class="">  116: sub slurp {
+</span><span class="">  117: 	my ($self, $rel_path) = @_;
+</span><span class="">  118: 	# autodie wraps open() in an eval internally; &#39;local $@&#39; protects the caller&#39;s $@.
+</span><span class="">  119: 	local $@;
+</span><span class="">  120: 	croak &#39;slurp requires a relative path&#39; unless defined $rel_path;
+</span><span class="">  121: 	my $abs = $self-&gt;abs_path($rel_path);
+</span><span class="">  122: 	# Provide a clear error if the caller asks for a file that isn&#39;t there.
+</span><span class="">  123: 	croak &quot;File not found: $abs&quot; unless -f $abs;
+</span><span class="">  124: 	open my $fh, &#39;&lt;:encoding(UTF-8)&#39;, $abs;
+</span><span class="">  125: 	# Undefine $/ to enable slurp mode (read the entire file in one operation).
+</span><span class="">  126: 	local $/;
+</span><span class="">  127: 	my $content = &lt;$fh&gt;;
+</span><span class="">  128: 	close $fh;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  129: 	return $content;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  130: }
+</span><span class="">  131: 
+</span><span class="">  132: =head2 perl_files( @dirs )
+</span><span class="">  133: 
+</span><span class="">  134: Returns an arrayref of paths (relative to root) for all Perl source files
+</span><span class="">  135: (.pm .pl .t .PL) found recursively under the given directories.
+</span><span class="">  136: Defaults to lib/, script/, bin/, t/.
+</span><span class="">  137: 
+</span><span class="">  138: =cut
+</span><span class="">  139: 
+</span><span class="">  140: sub perl_files {
+</span><span class="">  141: 	my ($self, @dirs) = @_;
+</span><span class="">  142: 	# Default to the standard Perl source directories when none are specified.
+</span><span class="">  143: 	@dirs = qw(lib script bin t) unless @dirs;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  144: 	return $self-&gt;_collect_files(\@dirs, sub {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  145: 		my $file = shift;
+</span><span class="">  146: 		# Extract the file extension and check it against our known Perl extensions.
+</span><span class="">  147: 		my ($ext) = $file =~ /(\.[^.]+)$/;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  148: 		return defined $ext &amp;&amp; grep { $ext eq $_ } @PERL_EXTENSIONS;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  149: 	});
+</span><span class="">  150: }
+</span><span class="">  151: 
+</span><span class="">  152: =head2 lib_modules
+</span><span class="">  153: 
+</span><span class="">  154: Returns an arrayref of .pm paths (relative to root) found under lib/.
+</span><span class="">  155: 
+</span><span class="">  156: =cut
+</span><span class="">  157: 
+</span><span class="">  158: sub lib_modules {
+</span><span class="">  159: 	my $self = shift;
+</span><span class="">  160: 	# Delegate to find_files with a suffix filter for .pm files.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  161: 	return $self-&gt;find_files(&#39;lib&#39;, &#39;.pm&#39;);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  162: }
+</span><span class="">  163: 
+</span><span class="">  164: =head2 test_files
+</span><span class="">  165: 
+</span><span class="">  166: Returns an arrayref of .t paths (relative to root) found under t/.
+</span><span class="">  167: 
+</span><span class="">  168: =cut
+</span><span class="">  169: 
+</span><span class="">  170: sub test_files {
+</span><span class="">  171: 	my $self = shift;
+</span><span class="">  172: 	# Delegate to find_files with a suffix filter for .t files.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  173: 	return $self-&gt;find_files(&#39;t&#39;, &#39;.t&#39;);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  174: }
+</span><span class="">  175: 
+</span><span class="">  176: =head2 git_root
+</span><span class="">  177: 
+</span><span class="">  178: Returns the git repository root, or undef if not in a git repo.
+</span><span class="">  179: 
+</span><span class="">  180: =cut
+</span><span class="">  181: 
+</span><span class="">  182: sub git_root {
+</span><span class="">  183: 	my $self = shift;
+</span><span class="">  184: 	my $root = $self-&gt;root;
+</span><span class="">  185: 	# Ask git for the repository root; 2&gt;/dev/null suppresses the error when
+</span><span class="">  186: 	# the directory is not inside any git repository.
+</span><span class="">  187: 	my $out  = qx{git -C \Q$root\E rev-parse --show-toplevel 2&gt;/dev/null};
+</span><span class="">  188: 	chomp $out;
+</span><span class="">  189: 	# Return undef rather than an empty string when outside a git repo.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  190: 	return (length $out) ? $out : undef;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  191: }
+</span><span class="">  192: 
+</span><span class="">  193: =head2 builder_file
+</span><span class="">  194: 
+</span><span class="">  195: Returns the name (relative to root) of the first found builder file, or undef.
+</span><span class="">  196: 
+</span><span class="">  197: =cut
+</span><span class="">  198: 
+</span><span class="">  199: sub builder_file {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">200 → 202 → 206</span></span>  200: 	my $self = shift;
+</span><span class="">  201: 	# Return the first builder file that actually exists in the distro root.
+</span><span class="">  202: 	for my $f (@BUILDER_FILES) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  203: 		return $f if $self-&gt;has_file($f);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  204: 	}
+</span><span class="">  205: 	# None of the known builder files were found.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  206: 	return undef;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  207: }
+</span><span class="">  208: 
+</span><span class="">  209: =head2 find_files( $dir, $pattern )
+</span><span class="">  210: 
+</span><span class="">  211: Returns an arrayref of all files under C&lt;$dir&gt; matching C&lt;$pattern&gt;
+</span><span class="">  212: (a string suffix or a compiled regexp).
+</span><span class="">  213: 
+</span><span class="">  214: =cut
+</span><span class="">  215: 
+</span><span class="">  216: sub find_files {
+</span><span class="">  217: 	my ($self, $dir, $pattern) = @_;
+</span><span class="">  218: 	croak &#39;find_files requires a directory&#39; unless defined $dir;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  219: 	return $self-&gt;_collect_files([$dir], sub {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  220: 		my $rel = shift;
+</span><span class="">  221: 		# No pattern means &quot;match everything&quot;.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  222: 		return 1 unless defined $pattern;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  223: 		# Accept either a compiled regexp or a plain string suffix.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  224: 		return ref $pattern eq &#39;Regexp&#39; ? $rel =~ $pattern : $rel =~ /\Q$pattern\E$/;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  225: 	});
+</span><span class="">  226: }
+</span><span class="">  227: 
+</span><span class="">  228: # ---------------------------------------------------------------------------
+</span><span class="">  229: # Private helpers
+</span><span class="">  230: # ---------------------------------------------------------------------------
+</span><span class="">  231: 
+</span><span class="">  232: # Purpose:    Recursively walk a list of directories, filtering files with $accept.
+</span><span class="">  233: # Entry:      $dirs is an arrayref of directory paths (relative to root).
+</span><span class="">  234: #             $accept is a coderef ($rel_path) -&gt; bool that filters results.
+</span><span class="">  235: # Exit:       Arrayref of relative paths that passed the $accept filter.
+</span><span class="">  236: # Side effects: Reads the filesystem (no writes).
+</span><span class="">  237: sub _collect_files {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">238 → 240 → 255</span></span>  238: 	my ($self, $dirs, $accept) = @_;
+</span><span class="">  239: 	my @found;
+</span><span class="">  240: 	for my $dir (@{$dirs}) {
+</span><span class="">  241: 		my $abs_dir = $self-&gt;abs_path($dir);
+</span><span class="">  242: 		# Skip directories that don&#39;t exist rather than croaking.
+</span><span class="">  243: 		next unless -d $abs_dir;
+</span><span class="">  244: 		File::Find::find({
+</span><span class="">  245: 			no_chdir =&gt; 1,    # Stay in one place; $_ is always absolute.
+</span><span class="">  246: 			wanted   =&gt; sub {
+</span><span class="">  247: 				return unless -f $_;    # Skip directories and symlinks.
+</span><span class="">  248: 				my $rel = File::Spec-&gt;abs2rel($_, $self-&gt;root);
+</span><span class="">  249: 				# Normalize to forward slashes on Windows where abs2rel uses backslashes.
+</span><span class="">  250: 				$rel =~ s{\\}{/}g;
+</span><span class="">  251: 				push @found, $rel if $accept-&gt;($rel);
+</span><span class="">  252: 			},
+</span><span class="">  253: 		}, $abs_dir);
+</span><span class="">  254: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  255: 	return \@found;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  256: }
+</span><span class="">  257: 
+</span><span class="">  258: 1;
+</span><span class="">  259: 
+</span><span class="">  260: __END__
+</span><span class="">  261: 
+</span><span class="">  262: =head1 NAME
+</span><span class="">  263: 
+</span><span class="">  264: App::Project::Doctor::Context - Distro filesystem context passed to all checks
+</span><span class="">  265: 
+</span><span class="">  266: =head1 VERSION
+</span><span class="">  267: 
+</span><span class="">  268: 0.02
+</span><span class="">  269: 
+</span><span class="">  270: =head1 SYNOPSIS
+</span><span class="">  271: 
+</span><span class="">  272:   use App::Project::Doctor::Context;
+</span><span class="">  273: 
+</span><span class="">  274:   my $ctx = App::Project::Doctor::Context-&gt;new(
+</span><span class="">  275:       root    =&gt; &#39;/path/to/my-dist&#39;,
+</span><span class="">  276:       verbose =&gt; 1,
+</span><span class="">  277:   );
+</span><span class="">  278: 
+</span><span class="">  279:   my $modules = $ctx-&gt;lib_modules;
+</span><span class="">  280:   my $content = $ctx-&gt;slurp(&#39;lib/My/Module.pm&#39;)
+</span><span class="">  281:       if $ctx-&gt;has_file(&#39;lib/My/Module.pm&#39;);
+</span><span class="">  282: 
+</span><span class="">  283: =head1 DESCRIPTION
+</span><span class="">  284: 
+</span><span class="">  285: Encapsulates the distribution root path and provides filesystem helpers.
+</span><span class="">  286: All C&lt;Check::*&gt; plugins receive an instance; they must not access the
+</span><span class="">  287: filesystem directly.
+</span><span class="">  288: 
+</span><span class="">  289: =head1 CONSTRUCTOR
+</span><span class="">  290: 
+</span><span class="">  291: =head2 new( %args )
+</span><span class="">  292: 
+</span><span class="">  293:   my $ctx = App::Project::Doctor::Context-&gt;new(
+</span><span class="">  294:       root    =&gt; &#39;/path/to/dist&#39;,  # must be an existing directory
+</span><span class="">  295:       verbose =&gt; 0,
+</span><span class="">  296:   );
+</span><span class="">  297: 
+</span><span class="">  298: Croaks when C&lt;root&gt; is not an existing directory.
+</span><span class="">  299: 
+</span><span class="">  300: =head3 API SPECIFICATION
+</span><span class="">  301: 
+</span><span class="">  302: =head4 Input
+</span><span class="">  303: 
+</span><span class="">  304:   root    : String  -- existing directory path   default &#39;.&#39;
+</span><span class="">  305:   verbose : Bool                                  default 0
+</span><span class="">  306: 
+</span><span class="">  307: =head4 Output
+</span><span class="">  308: 
+</span><span class="">  309: Blessed hashref of type C&lt;App::Project::Doctor::Context&gt;.
+</span><span class="">  310: 
+</span><span class="">  311: =head1 ACCESSORS
+</span><span class="">  312: 
+</span><span class="">  313: C&lt;root&gt;, C&lt;verbose&gt; -- read-only.
+</span><span class="">  314: 
+</span><span class="">  315: =head1 METHODS
+</span><span class="">  316: 
+</span><span class="">  317: =head2 has_file( $rel_path )
+</span><span class="">  318: 
+</span><span class="">  319: =head3 API SPECIFICATION
+</span><span class="">  320: 
+</span><span class="">  321: =head4 Input
+</span><span class="">  322: 
+</span><span class="">  323:   $rel_path : String
+</span><span class="">  324: 
+</span><span class="">  325: =head4 Output
+</span><span class="">  326: 
+</span><span class="">  327: Bool.
+</span><span class="">  328: 
+</span><span class="">  329: =head2 abs_path( $rel_path )
+</span><span class="">  330: 
+</span><span class="">  331: =head3 API SPECIFICATION
+</span><span class="">  332: 
+</span><span class="">  333: =head4 Input
+</span><span class="">  334: 
+</span><span class="">  335:   $rel_path : String
+</span><span class="">  336: 
+</span><span class="">  337: =head4 Output
+</span><span class="">  338: 
+</span><span class="">  339: String -- absolute path.
+</span><span class="">  340: 
+</span><span class="">  341: =head2 slurp( $rel_path )
+</span><span class="">  342: 
+</span><span class="">  343: =head3 API SPECIFICATION
+</span><span class="">  344: 
+</span><span class="">  345: =head4 Input
+</span><span class="">  346: 
+</span><span class="">  347:   $rel_path : String
+</span><span class="">  348: 
+</span><span class="">  349: =head4 Output
+</span><span class="">  350: 
+</span><span class="">  351: String -- UTF-8 file content.
+</span><span class="">  352: 
+</span><span class="">  353: =head2 perl_files( @dirs )
+</span><span class="">  354: 
+</span><span class="">  355: =head3 API SPECIFICATION
+</span><span class="">  356: 
+</span><span class="">  357: =head4 Input
+</span><span class="">  358: 
+</span><span class="">  359:   @dirs : List of String  (default: lib script bin t)
+</span><span class="">  360: 
+</span><span class="">  361: =head4 Output
+</span><span class="">  362: 
+</span><span class="">  363: ArrayRef[String] -- relative paths.
+</span><span class="">  364: 
+</span><span class="">  365: =head2 lib_modules
+</span><span class="">  366: 
+</span><span class="">  367: ArrayRef[String] -- .pm files under lib/.
+</span><span class="">  368: 
+</span><span class="">  369: =head2 test_files
+</span><span class="">  370: 
+</span><span class="">  371: ArrayRef[String] -- .t files under t/.
+</span><span class="">  372: 
+</span><span class="">  373: =head2 git_root
+</span><span class="">  374: 
+</span><span class="">  375: =head3 API SPECIFICATION
+</span><span class="">  376: 
+</span><span class="">  377: =head4 Input
+</span><span class="">  378: 
+</span><span class="">  379: None.
+</span><span class="">  380: 
+</span><span class="">  381: =head4 Output
+</span><span class="">  382: 
+</span><span class="">  383: String | undef.
+</span><span class="">  384: 
+</span><span class="">  385: =head2 builder_file
+</span><span class="">  386: 
+</span><span class="">  387: =head3 API SPECIFICATION
+</span><span class="">  388: 
+</span><span class="">  389: =head4 Input
+</span><span class="">  390: 
+</span><span class="">  391: None.
+</span><span class="">  392: 
+</span><span class="">  393: =head4 Output
+</span><span class="">  394: 
+</span><span class="">  395: String | undef -- first found of Makefile.PL Build.PL dist.ini cpanfile.
+</span><span class="">  396: 
+</span><span class="">  397: =head2 find_files( $dir, $pattern )
+</span><span class="">  398: 
+</span><span class="">  399: =head3 API SPECIFICATION
+</span><span class="">  400: 
+</span><span class="">  401: =head4 Input
+</span><span class="">  402: 
+</span><span class="">  403:   $dir     : String
+</span><span class="">  404:   $pattern : String | Regexp | undef
+</span><span class="">  405: 
+</span><span class="">  406: =head4 Output
+</span><span class="">  407: 
+</span><span class="">  408: ArrayRef[String] -- relative paths.
+</span><span class="">  409: 
+</span><span class="">  410: =head3 MESSAGES
+</span><span class="">  411: 
+</span><span class="">  412:   Code | Trigger | Resolution
+</span><span class="">  413:   -----|---------|----------
+</span><span class="">  414:   (none currently defined)
+</span><span class="">  415: 
+</span><span class="">  416: =head3 FORMAL SPECIFICATION
+</span><span class="">  417: 
+</span><span class="">  418:   Context == [ root : Path, verbose : Bool ]
+</span><span class="">  419: 
+</span><span class="">  420:   has_file : Context x RelPath -&gt; Bool
+</span><span class="">  421:   has_file ctx p == exists (root ctx / p)
+</span><span class="">  422: 
+</span><span class="">  423:   slurp : Context x RelPath -&gt; String
+</span><span class="">  424:   dom slurp == { (ctx, p) | has_file ctx p }
+</span><span class="">  425: 
+</span><span class="">  426: =head1 LIMITATIONS
+</span><span class="">  427: 
+</span><span class="">  428: C&lt;git_root&gt; shells out to C&lt;git&gt;; returns undef when git is not installed.
+</span><span class="">  429: 
+</span><span class="">  430: =head1 AUTHOR
+</span><span class="">  431: 
+</span><span class="">  432: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  433: 
+</span><span class="">  434: =head1 LICENSE
+</span><span class="">  435: 
+</span><span class="">  436: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  437: This library is free software; you can redistribute it and/or modify
+</span><span class="">  438: it under the same terms as Perl itself.
+</span><span class="">  439: 
+</span><span class="">  440: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	

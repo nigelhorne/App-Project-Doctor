@@ -1,0 +1,487 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Project/Doctor/Check/Security.pm</h1>
+<div class="nav"><a href="Pod.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="Tests.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 93.75%<br>
+TER3 (LCSAJ): 100.0% (2/2)<br>
+Approximate LCSAJ segments: 17<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Project::Doctor::Check::Security;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: use autodie qw(:all);
+</span><span class="">    6: 
+</span><span class="">    7: use parent -norequire, &#39;App::Project::Doctor::Check::Base&#39;;
+</span><span class="">    8: 
+</span><span class="">    9: use Carp qw(croak carp);
+</span><span class="">   10: use Readonly;
+</span><span class="">   11: 
+</span><span class="">   12: our $VERSION = &#39;0.02&#39;;
+</span><span class="">   13: 
+</span><span class="">   14: Readonly::Array my @SECRET_PATTERNS =&gt; (
+</span><span class="">   15: 	qr/(?:password|passwd|secret|api_?key|token)\s*=\s*[&#39;&quot;][^&#39;&quot;]{4,}[&#39;&quot;]/i,
+</span><span class="">   16: 	qr/-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
+</span><span class="">   17: 	qr/(?:AKIA|ASIA)[A-Z0-9]{16}/,
+</span><span class="">   18: );
+</span><span class="">   19: 
+</span><span class="">   20: sub name        { &#39;Security&#39; }
+</span><span class="">   21: sub description { &#39;All modules declare strict/warnings; no hardcoded credentials.&#39; }
+</span><span class="">   22: sub can_fix     { 1 }
+</span><span class="">   23: sub order       { 60 }
+</span><span class="">   24: 
+</span><span class="">   25: sub check {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">26 → 32 → 73</span></span>   26: 	my ($self, $ctx) = @_;
+</span><span class="">   27: 	croak &#39;check requires an App::Project::Doctor::Context&#39; unless ref $ctx;
+</span><span class="">   28: 
+</span><span class="">   29: 	my @findings;
+</span><span class="">   30: 	my $files = $ctx-&gt;perl_files(&#39;lib&#39;, &#39;script&#39;, &#39;bin&#39;);
+</span><span class="">   31: 
+</span><span class="">   32: 	for my $rel (@{$files}) {
+</span><span class="">   33: 		my $content = eval { $ctx-&gt;slurp($rel) } // do { carp &quot;Cannot slurp $rel&quot;; next };
+</span><span class="">   34: 
+</span><span class="">   35: 		# strict / warnings -- skip .t files (they inherit from test harness).
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   36: 		unless ($rel =~ /\.t$/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   37: 			unless ($content =~ /^\s*use\s+strict\b/m) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   38: 				push @findings, _f(
+</span><span class="">   39: 					severity =&gt; &#39;error&#39;,
+</span><span class="">   40: 					message  =&gt; &quot;Missing &#39;use strict&#39; in $rel.&quot;,
+</span><span class="">   41: 					file     =&gt; $rel,
+</span><span class="">   42: 					fix      =&gt; _fix_pragma($ctx, $rel, &#39;strict&#39;),
+</span><span class="">   43: 				);
+</span><span class="">   44: 			}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   45: 			unless ($content =~ /^\s*use\s+warnings\b/m) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   46: 				push @findings, _f(
+</span><span class="">   47: 					severity =&gt; &#39;error&#39;,
+</span><span class="">   48: 					message  =&gt; &quot;Missing &#39;use warnings&#39; in $rel.&quot;,
+</span><span class="">   49: 					file     =&gt; $rel,
+</span><span class="">   50: 					fix      =&gt; _fix_pragma($ctx, $rel, &#39;warnings&#39;),
+</span><span class="">   51: 				);
+</span><span class="">   52: 			}
+</span><span class="">   53: 		}
+</span><span class="">   54: 
+</span><span class="">   55: 		# Credential scan.
+</span><span class="">   56: 		my @lines = split /\n/, $content;
+</span><span class="">   57: 		for my $i (0 .. $#lines) {
+</span><span class="">   58: 			for my $pat (@SECRET_PATTERNS) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   59: 				if ($lines[$i] =~ $pat) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   60: 					push @findings, _f(
+</span><span class="">   61: 						severity =&gt; &#39;error&#39;,
+</span><span class="">   62: 						message  =&gt; &quot;Possible hardcoded credential in $rel at line &quot; . ($i + 1) . &#39;.&#39;,
+</span><span class="">   63: 						file     =&gt; $rel,
+</span><span class="">   64: 						line     =&gt; $i + 1,
+</span><span class="">   65: 						detail   =&gt; &#39;Move secrets to environment variables or a config file.&#39;,
+</span><span class="">   66: 					);
+</span><span class="">   67: 					last;
+</span><span class="">   68: 				}
+</span><span class="">   69: 			}
+</span><span class="">   70: 		}
+</span><span class="">   71: 	}
+</span><span class="">   72: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">73 → 73 → 80</span></span>   73: 	unless (@findings) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   74: 		push @findings, _f(
+</span><span class="">   75: 			severity =&gt; &#39;pass&#39;,
+</span><span class="">   76: 			message  =&gt; &#39;All checked files use strict/warnings; no credential patterns found.&#39;,
+</span><span class="">   77: 		);
+</span><span class="">   78: 	}
+</span><span class="">   79: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   80: 	return @findings;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   81: }
+</span><span class="">   82: 
+</span><span class="">   83: # ---------------------------------------------------------------------------
+</span><span class="">   84: # Private helpers
+</span><span class="">   85: # ---------------------------------------------------------------------------
+</span><span class="">   86: 
+</span><span class="">   87: sub _f {
+</span><span class="">   88: 	require App::Project::Doctor::Finding;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   89: 	return App::Project::Doctor::Finding-&gt;new(check_name =&gt; &#39;Security&#39;, @_);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   90: }
+</span><span class="">   91: 
+</span><span class="">   92: sub _fix_pragma {
+</span><span class="">   93: 	my ($ctx, $rel, $pragma) = @_;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   94: 	return sub {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   95: 		my $abs = $ctx-&gt;abs_path($rel);
+</span><span class="">   96: 		open my $fh, &#39;&lt;&#39;, $abs;
+</span><span class="">   97: 		my @lines = &lt;$fh&gt;;
+</span><span class="">   98: 		close $fh;
+</span><span class="">   99: 
+</span><span class="">  100: 		# A shebang must remain the very first line of a script so the OS
+</span><span class="">  101: 		# can recognise it; preserve it by starting the search one line in.
+</span><span class="">  102: 		my $insert_at = (@lines &amp;&amp; $lines[0] =~ /^#!/) ? 1 : 0;
+</span><span class="">  103: 		for my $i ($insert_at .. $#lines) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  104: 			if ($lines[$i] =~ /^\s*package\s+\S+/) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  105: 				$insert_at = $i + 1;
+</span><span class="">  106: 				last;
+</span><span class="">  107: 			}
+</span><span class="">  108: 		}
+</span><span class="">  109: 		splice @lines, $insert_at, 0, &quot;use $pragma;\n&quot;;
+</span><span class="">  110: 
+</span><span class="">  111: 		open my $out, &#39;&gt;&#39;, $abs;
+</span><span class="">  112: 		print {$out} @lines;
+</span><span class="">  113: 		close $out;
+</span><span class="">  114: 	};
+</span><span class="">  115: }
+</span><span class="">  116: 
+</span><span class="">  117: 1;
+</span><span class="">  118: 
+</span><span class="">  119: __END__
+</span><span class="">  120: 
+</span><span class="">  121: =head1 NAME
+</span><span class="">  122: 
+</span><span class="">  123: App::Project::Doctor::Check::Security - Check for missing pragmas and hardcoded secrets
+</span><span class="">  124: 
+</span><span class="">  125: =head1 DESCRIPTION
+</span><span class="">  126: 
+</span><span class="">  127: Two security checks across all Perl source files:
+</span><span class="">  128: 
+</span><span class="">  129: =over 4
+</span><span class="">  130: 
+</span><span class="">  131: =item 1. C&lt;use strict&gt; and C&lt;use warnings&gt; present in every C&lt;.pm&gt; and script.
+</span><span class="">  132: 
+</span><span class="">  133: =item 2. Scan for hardcoded credential patterns (passwords, API keys, AWS
+</span><span class="">  134: key prefixes, PEM private key headers).
+</span><span class="">  135: 
+</span><span class="">  136: =back
+</span><span class="">  137: 
+</span><span class="">  138: Pragma fixes are automated; credential findings require manual resolution.
+</span><span class="">  139: 
+</span><span class="">  140: =head3 MESSAGES
+</span><span class="">  141: 
+</span><span class="">  142:   Code | Trigger                      | Resolution
+</span><span class="">  143:   -----|------------------------------|-------------------------------------------
+</span><span class="">  144:   S001 | Missing &#39;use strict&#39;         | Fix inserts pragma after package declaration
+</span><span class="">  145:   S002 | Missing &#39;use warnings&#39;       | Fix inserts pragma after package declaration
+</span><span class="">  146:   S003 | Possible hardcoded secret    | Move to env var / external config
+</span><span class="">  147: 
+</span><span class="">  148: =head3 FORMAL SPECIFICATION
+</span><span class="">  149: 
+</span><span class="">  150:   check : Context -&gt; [Finding]
+</span><span class="">  151:   check ctx ==
+</span><span class="">  152:     concat [ check_file f | f &lt;- perl_files ctx ]
+</span><span class="">  153:     where
+</span><span class="">  154:       check_file f ==
+</span><span class="">  155:         strict_check f ++ warnings_check f ++ credential_check f
+</span><span class="">  156: 
+</span><span class="">  157: =head1 AUTHOR
+</span><span class="">  158: 
+</span><span class="">  159: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  160: 
+</span><span class="">  161: =head1 LICENSE
+</span><span class="">  162: 
+</span><span class="">  163: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  164: This library is free software; you can redistribute it and/or modify
+</span><span class="">  165: it under the same terms as Perl itself.
+</span><span class="">  166: 
+</span><span class="">  167: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	

@@ -1,0 +1,469 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Project/Doctor/Check/CI.pm</h1>
+<div class="nav"><a href="Base.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="CpanReadiness.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 84.09%<br>
+TER2 (Branch): 83.33%<br>
+TER3 (LCSAJ): 100.0% (1/1)<br>
+Approximate LCSAJ segments: 7<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Project::Doctor::Check::CI;
+</span><span class="">    2: 
+</span><span class="">    3: # This check answers a single question: does the distribution have any CI
+</span><span class="">    4: # configuration at all?  The detailed per-file validation of GitHub Actions
+</span><span class="">    5: # YAML is handled separately by Check::GitHubActions.
+</span><span class="">    6: 
+</span><span class="">    7: use strict;
+</span><span class="">    8: use warnings;
+</span><span class="">    9: use autodie qw(:all);
+</span><span class="">   10: 
+</span><span class="">   11: # Inherit the standard check interface (name, description, order, can_fix, check).
+</span><span class="">   12: use parent -norequire, &#39;App::Project::Doctor::Check::Base&#39;;
+</span><span class="">   13: 
+</span><span class="">   14: # croak dies with the caller&#39;s file/line instead of this module&#39;s line.
+</span><span class="">   15: use Carp qw(croak);
+</span><span class="">   16: # File::Spec builds OS-portable paths so the fix works on Windows too.
+</span><span class="">   17: use File::Spec;
+</span><span class="">   18: # Readonly creates true constants; assigning to them throws at runtime.
+</span><span class="">   19: use Readonly;
+</span><span class="">   20: 
+</span><span class="">   21: our $VERSION = &#39;0.02&#39;;
+</span><span class="">   22: 
+</span><span class="">   23: # Map human-readable CI system names to the path that indicates each one.
+</span><span class="">   24: # The check passes as soon as any of these paths exists under the distro root.
+</span><span class="">   25: Readonly::Hash my %CI_PATHS =&gt; (
+</span><span class="">   26: 	&#39;GitHub Actions&#39; =&gt; &#39;.github/workflows&#39;,
+</span><span class="">   27: 	&#39;Travis CI&#39;      =&gt; &#39;.travis.yml&#39;,
+</span><span class="">   28: 	&#39;CircleCI&#39;       =&gt; &#39;.circleci/config.yml&#39;,
+</span><span class="">   29: 	&#39;AppVeyor&#39;       =&gt; &#39;appveyor.yml&#39;,
+</span><span class="">   30: );
+</span><span class="">   31: 
+</span><span class="">   32: # Return the canonical name used in Finding check_name and report headings.
+</span><span class="">   33: sub name        { &#39;CI&#39; }
+</span><span class="">   34: # One-line description shown in --help and verbose output.
+</span><span class="">   35: sub description { &#39;At least one CI configuration is present.&#39; }
+</span><span class="">   36: # Signal that this check can offer an automated fix.
+</span><span class="">   37: sub can_fix     { 1 }
+</span><span class="">   38: # Lower number = runs earlier; CI runs after Tests (10) but before GitHubActions (25).
+</span><span class="">   39: sub order       { 20 }
+</span><span class="">   40: 
+</span><span class="">   41: sub check {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">42 → 48 → 59</span></span>   42: 	my ($self, $ctx) = @_;
+</span><span class="">   43: 	# Guard: $ctx must be an object with file-system helpers.
+</span><span class="">   44: 	croak &#39;check requires an App::Project::Doctor::Context&#39; unless ref $ctx;
+</span><span class="">   45: 
+</span><span class="">   46: 	# Walk through each known CI system and return a pass finding as soon as
+</span><span class="">   47: 	# we spot one.  We sort the keys so the result is deterministic.
+</span><span class="">   48: 	for my $label (sort keys %CI_PATHS) {
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   49: 		if ($ctx-&gt;has_file($CI_PATHS{$label})) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   50: 			# Found a CI config: report success and stop checking.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   51: 			return _f(
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   52: 				severity =&gt; &#39;pass&#39;,
+</span><span class="">   53: 				message  =&gt; &quot;CI configuration found ($label).&quot;,
+</span><span class="">   54: 			);
+</span><span class="">   55: 		}
+</span><span class="">   56: 	}
+</span><span class="">   57: 
+</span><span class="">   58: 	# No CI config was found at all; offer to generate a GitHub Actions workflow.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   59: 	return _f(
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   60: 		severity =&gt; &#39;error&#39;,
+</span><span class="">   61: 		message  =&gt; &#39;No CI configuration found (GitHub Actions, Travis, CircleCI, AppVeyor).&#39;,
+</span><span class="">   62: 		fix      =&gt; sub {
+</span><span class="">   63: 			# The fix creates .github/workflows/perl-ci.yml using the
+</span><span class="">   64: 			# App::GHGen::Generator functional API.
+</span><span class="">   65: 			my $root = $_[0]-&gt;root;
+</span><span class="">   66: 			require App::GHGen::Generator;
+</span><span class="">   67: 			# generate_workflow returns a YAML string or undef if it fails.
+</span><span class="">   68: 			my $yaml = App::GHGen::Generator::generate_workflow(&#39;perl&#39;);
+</span><span class="">   69: 			return unless $yaml;    # Nothing to write if generation failed.
+</span><span class="">   70: 			# Build the target directory path in a cross-platform way.
+</span><span class="">   71: 			my $wf_dir = File::Spec-&gt;catdir($root, &#39;.github&#39;, &#39;workflows&#39;);
+</span><span class="">   72: 			require File::Path;
+</span><span class="">   73: 			# make_path creates the directory and all missing parents.
+</span><span class="">   74: 			File::Path::make_path($wf_dir);
+</span><span class="">   75: 			# Write the generated YAML to the standard workflow file.
+</span><span class="">   76: 			open my $fh, &#39;&gt;&#39;, File::Spec-&gt;catfile($wf_dir, &#39;perl-ci.yml&#39;);
+</span><span class="">   77: 			print {$fh} $yaml;
+</span><span class="">   78: 			close $fh;
+</span><span class="">   79: 		},
+</span><span class="">   80: 	);
+</span><span class="">   81: }
+</span><span class="">   82: 
+</span><span class="">   83: # ---------------------------------------------------------------------------
+</span><span class="">   84: # Private helper
+</span><span class="">   85: # ---------------------------------------------------------------------------
+</span><span class="">   86: 
+</span><span class="">   87: # Purpose:    Build a Finding object pre-filled with check_name =&gt; &#39;CI&#39;.
+</span><span class="">   88: # Entry:      %args is a valid Finding constructor argument list.
+</span><span class="">   89: # Exit:       App::Project::Doctor::Finding object.
+</span><span class="">   90: # Side effects: None.
+</span><span class="">   91: sub _f {
+</span><span class="">   92: 	require App::Project::Doctor::Finding;
+</span><span class="">   93: 	# Prepend check_name so callers don&#39;t have to repeat it every time.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   94: 	return App::Project::Doctor::Finding-&gt;new(check_name =&gt; &#39;CI&#39;, @_);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   95: }
+</span><span class="">   96: 
+</span><span class="">   97: 1;
+</span><span class="">   98: 
+</span><span class="">   99: __END__
+</span><span class="">  100: 
+</span><span class="">  101: =head1 NAME
+</span><span class="">  102: 
+</span><span class="">  103: App::Project::Doctor::Check::CI - Check that a CI configuration exists
+</span><span class="">  104: 
+</span><span class="">  105: =head1 DESCRIPTION
+</span><span class="">  106: 
+</span><span class="">  107: Reports an error when no supported CI configuration is found.  Detailed
+</span><span class="">  108: GitHub Actions validation is handled by L&lt;App::Project::Doctor::Check::GitHubActions&gt;.
+</span><span class="">  109: 
+</span><span class="">  110: =head1 METHODS
+</span><span class="">  111: 
+</span><span class="">  112: =head2 check( $context )
+</span><span class="">  113: 
+</span><span class="">  114: Inspects the distro root for any recognised CI configuration.
+</span><span class="">  115: 
+</span><span class="">  116: =head3 API SPECIFICATION
+</span><span class="">  117: 
+</span><span class="">  118: =head4 Input
+</span><span class="">  119: 
+</span><span class="">  120:   $context : App::Project::Doctor::Context
+</span><span class="">  121: 
+</span><span class="">  122: =head4 Output
+</span><span class="">  123: 
+</span><span class="">  124:   List of exactly one App::Project::Doctor::Finding --
+</span><span class="">  125:     pass    when at least one CI config file or directory is present,
+</span><span class="">  126:     error   (fixable) when none are found.
+</span><span class="">  127: 
+</span><span class="">  128: =head3 MESSAGES
+</span><span class="">  129: 
+</span><span class="">  130:   Code | Trigger           | Resolution
+</span><span class="">  131:   -----|-------------------|------------------------------------
+</span><span class="">  132:   C001 | No CI config      | Fix generates a workflow via App::GHGen::Generator
+</span><span class="">  133: 
+</span><span class="">  134: =head3 FORMAL SPECIFICATION
+</span><span class="">  135: 
+</span><span class="">  136:   check : Context -&gt; [Finding]
+</span><span class="">  137:   check ctx == if exists any CI_PATH in ctx then [pass] else [error+fix]
+</span><span class="">  138: 
+</span><span class="">  139: =head1 AUTHOR
+</span><span class="">  140: 
+</span><span class="">  141: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  142: 
+</span><span class="">  143: =head1 LICENSE
+</span><span class="">  144: 
+</span><span class="">  145: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  146: This library is free software; you can redistribute it and/or modify
+</span><span class="">  147: it under the same terms as Perl itself.
+</span><span class="">  148: 
+</span><span class="">  149: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	

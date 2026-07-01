@@ -1,0 +1,463 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+
+/* --------------------------------------------------
+   CSS Variables (Light Mode Default)
+-------------------------------------------------- */
+
+:root {
+    --bg: #ffffff;
+    --text: #000000;
+    --table-header: #333;
+    --table-header-text: #ffffff;
+
+    --survived-1: #f8d7da;
+    --survived-2: #f5b7b1;
+    --survived-3: #ec7063;
+
+    --killed: #d4edda;
+    --border: #cccccc;
+}
+
+/* --------------------------------------------------
+   Dark Mode Overrides
+-------------------------------------------------- */
+
+html[data-theme='dark'] {
+    --bg: #1e1e1e;
+    --text: #dddddd;
+    --table-header: #222;
+    --table-header-text: #ffffff;
+
+    --survived-1: #5c2b2e;
+    --survived-2: #7b2c2f;
+    --survived-3: #a93226;
+
+    --killed: #1e4620;
+    --border: #555;
+}
+
+/* --------------------------------------------------
+   Global Styles
+-------------------------------------------------- */
+
+body {
+	font-family: sans-serif;
+	background: var(--bg);
+	color: var(--text);
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background: var(--table-header);
+    color: var(--table-header-text);
+}
+
+.survived-1 { background-color: var(--survived-1); }
+.survived-2 { background-color: var(--survived-2); }
+.survived-3 { background-color: var(--survived-3); }
+
+.killed { background-color: var(--killed); }
+
+.legend {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.legend pre {
+    background: #f4f4f4;
+    padding: 5px;
+}
+
+.legend-box {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 0 6px 0 20px;
+    vertical-align: middle;
+    border: 1px solid var(--border);
+}
+
+/* White box for non-mutated lines */
+.legend-box.none {
+	background-color: var(--bg);
+}
+
+/* --------------------------------------------------
+   Suggested Test Box Styling
+   Theme-aware and readable in light & dark modes
+-------------------------------------------------- */
+
+.suggested-test {
+    margin-top: 6px;
+    margin-bottom: 12px;
+
+    /* Use theme variables instead of hardcoded colors */
+    background: var(--bg);
+    color: var(--text);
+
+    padding: 8px;
+    border-radius: 4px;
+
+    /* Subtle border for visual separation */
+    border: 1px solid var(--border);
+}
+
+/* Label styling */
+.suggest-label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+/* Ensure the test code block inherits readable colors */
+.suggested-test pre {
+    background: transparent;   /* Prevent nested dark blocks */
+    color: inherit;            /* Match theme text color */
+    margin: 0;
+    font-family: monospace;
+}
+
+pre { line-height: 1.4; }
+
+pre > details {
+    margin: 0.2em 0;
+}
+
+pre > details:first-child {
+    margin-top: 0;
+}
+
+pre > details:last-child {
+    margin-bottom: 0;
+}
+
+pre details,
+pre summary,
+pre ul,
+pre li {
+    white-space: normal;
+    margin: 0;
+    padding: 0;
+    line-height: 1.2;
+}
+
+.nav { margin-bottom: 1em; }
+
+.toggle {
+    float: right;
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+/* Tooltip container */
+.tooltip {
+	position: relative;
+	cursor: help;
+}
+
+/* Tooltip bubble */
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: var(--table-header);
+    color: var(--table-header-text);
+    padding: 6px 10px;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 30ch;
+    font-size: 12px;
+    border-radius: 6px;
+    z-index: 1000;
+    margin-left: 10ch;   /* move tooltip ~10 characters to the right */
+}
+
+.mutant-details {
+	margin-left: 2em;
+	font-size: 0.9em;
+}
+
+/* Indent the list of mutations that displays when expanding by 8 characters */
+pre details.mutant-details ul {
+	padding-left: 8ch;
+	margin: 0.2em 0;
+}
+
+.mutant-details summary {
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.lcsaj-dot {
+    color: #5555ff;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-dot-uncovered {
+    color: #cc4444;
+    font-size: 10px;
+    margin-right: 3px;
+}
+
+.lcsaj-tip {
+	position: relative;
+	display: inline-block;
+}
+
+.lcsaj-tip .lcsaj-tip-text {
+	visibility: hidden;
+	background-color: #333;
+	color: #fff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+	white-space: nowrap;
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+}
+
+.lcsaj-tip:hover .lcsaj-tip-text {
+	visibility: visible;
+}
+
+</style>
+</head>
+<body>
+<button class="toggle" onclick="toggleTheme()">🌙 Toggle Theme</button>
+<h1>lib/App/Project/Doctor/Check/Meta.pm</h1>
+<div class="nav"><a href="License.pm.html">⬅ Previous</a> <a href="../../../../../../index.html">Index</a>
+ <a href="Pod.pm.html">Next ➡</a></div><div class='summary'>
+<strong>Structural Coverage (Approximate)</strong><p>
+TER1 (Statement): 100.00%<br>
+TER2 (Branch): 91.67%<br>
+TER3 (LCSAJ): 100.0% (4/4)<br>
+Approximate LCSAJ segments: 13<br>
+</div>
+
+    <div class="legend">
+        <h3>LCSAJ Legend</h3>
+
+        <p>
+        <span class="lcsaj-dot">●</span>
+        <b>Covered</b> — this LCSAJ path was executed during testing.
+        </p>
+
+        <p>
+        <span class="lcsaj-dot-uncovered">●</span>
+        <b>Not covered</b> — this LCSAJ path was never executed. These are the paths to focus on.
+        </p>
+
+        <p>
+        Multiple dots on a line indicate that multiple control-flow paths begin at that line.
+        Hovering over any dot shows:
+        </p>
+
+        <pre>
+        start → end → jump
+        </pre>
+
+        <ul>
+        <li><b>start</b> – first line of the linear sequence</li>
+        <li><b>end</b> – last line before control flow changes</li>
+        <li><b>jump</b> – line execution jumps to next</li>
+        </ul>
+
+        <p>
+        Uncovered paths show <b>[NOT COVERED]</b> in the tooltip.
+	</p>
+    </div>
+
+		<div class="legend">
+			<h3>Mutant Testing Legend</h3>
+			<span class="legend-box survived-1"></span> Survived (tests missed this)
+			<span class="legend-box killed"></span> Killed (tests detected this)
+			<span class="legend-box none"></span> No mutation
+		</div>
+	<pre>
+<span class="">    1: package App::Project::Doctor::Check::Meta;
+</span><span class="">    2: 
+</span><span class="">    3: use strict;
+</span><span class="">    4: use warnings;
+</span><span class="">    5: use autodie qw(:all);
+</span><span class="">    6: 
+</span><span class="">    7: use parent -norequire, &#39;App::Project::Doctor::Check::Base&#39;;
+</span><span class="">    8: 
+</span><span class="">    9: use Carp qw(croak carp);
+</span><span class="">   10: use Readonly;
+</span><span class="">   11: 
+</span><span class="">   12: our $VERSION = &#39;0.02&#39;;
+</span><span class="">   13: 
+</span><span class="">   14: Readonly::Array my @REQUIRED_FIELDS =&gt; qw(name version author abstract license);
+</span><span class="">   15: Readonly::Array my @META_FILES      =&gt; qw(META.json META.yml MYMETA.json MYMETA.yml);
+</span><span class="">   16: 
+</span><span class="">   17: sub name        { &#39;META&#39; }
+</span><span class="">   18: sub description { &#39;META.yml or META.json is present, parseable, and complete.&#39; }
+</span><span class="">   19: sub can_fix     { 0 }
+</span><span class="">   20: sub order       { 30 }
+</span><span class="">   21: 
+</span><span class="">   22: sub check {
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">23 → 30 → 46</span></span>   23: 	my ($self, $ctx) = @_;
+</span><span class="">   24: 	croak &#39;check requires an App::Project::Doctor::Context&#39; unless ref $ctx;
+</span><span class="">   25: 
+</span><span class="">   26: 	my @findings;
+</span><span class="">   27: 
+</span><span class="">   28: 	my ($meta_file) = grep { $ctx-&gt;has_file($_) } @META_FILES;
+</span><span class="">   29: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   30: 	unless ($meta_file) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   31: 		push @findings, _f(
+</span><span class="">   32: 			severity =&gt; &#39;warning&#39;,
+</span><span class="">   33: 			message  =&gt; &#39;No META.{yml,json} -- run your builder to generate one.&#39;,
+</span><span class="">   34: 			detail   =&gt; &#39;CPAN indexers require META to discover name and version.&#39;,
+</span><span class="">   35: 		);
+</span><span class="">   36: 		# Fall back: at least confirm a builder file exists.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   37: 		unless ($ctx-&gt;builder_file) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   38: 			push @findings, _f(
+</span><span class="">   39: 				severity =&gt; &#39;error&#39;,
+</span><span class="">   40: 				message  =&gt; &#39;No Makefile.PL, Build.PL, or dist.ini found.&#39;,
+</span><span class="">   41: 			);
+</span><span class="">   42: 		}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   43: 		return @findings;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   44: 	}
+</span><span class="">   45: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">46 → 48 → 56</span></span>   46: 	require CPAN::Meta;
+</span><span class="">   47: 	my $meta = eval { CPAN::Meta-&gt;load_file($ctx-&gt;abs_path($meta_file)) };
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   48: 	if ($@) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   49: 		return _f(
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   50: 			severity =&gt; &#39;error&#39;,
+</span><span class="">   51: 			message  =&gt; &quot;Failed to parse $meta_file -- file may be malformed.&quot;,
+</span><span class="">   52: 			file     =&gt; $meta_file,
+</span><span class="">   53: 		);
+</span><span class="">   54: 	}
+</span><span class="">   55: 
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">56 → 57 → 66</span></span>   56: 	my %data = %{ $meta-&gt;as_struct };
+</span><span class="">   57: 	for my $field (@REQUIRED_FIELDS) {
+</span><span class="">   58: 		next if defined $data{$field} &amp;&amp; length $data{$field};
+</span><span class="">   59: 		push @findings, _f(
+</span><span class="">   60: 			severity =&gt; &#39;error&#39;,
+</span><span class="">   61: 			message  =&gt; &quot;META field &#39;$field&#39; is missing or empty in $meta_file.&quot;,
+</span><span class="">   62: 			file     =&gt; $meta_file,
+</span><span class="">   63: 		);
+</span><span class="">   64: 	}
+</span><span class="">   65: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic."><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">66 → 66 → 73</span></span>   66: 	unless (@findings) {
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">   67: 		push @findings, _f(
+</span><span class="">   68: 			severity =&gt; &#39;pass&#39;,
+</span><span class="">   69: 			message  =&gt; &quot;$meta_file is valid and all required fields are present.&quot;,
+</span><span class="">   70: 		);
+</span><span class="">   71: 	}
+</span><span class="">   72: 
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   73: 	return @findings;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   74: }
+</span><span class="">   75: 
+</span><span class="">   76: sub _f {
+</span><span class="">   77: 	require App::Project::Doctor::Finding;
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">   78: 	return App::Project::Doctor::Finding-&gt;new(check_name =&gt; &#39;META&#39;, @_);
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">   79: }
+</span><span class="">   80: 
+</span><span class="">   81: 1;
+</span><span class="">   82: 
+</span><span class="">   83: __END__
+</span><span class="">   84: 
+</span><span class="">   85: =head1 NAME
+</span><span class="">   86: 
+</span><span class="">   87: App::Project::Doctor::Check::Meta - Check META file presence and validity
+</span><span class="">   88: 
+</span><span class="">   89: =head1 DESCRIPTION
+</span><span class="">   90: 
+</span><span class="">   91: Uses L&lt;CPAN::Meta&gt; to parse the distribution META file and verifies that all
+</span><span class="">   92: required fields (name, version, author, abstract, license) are present.
+</span><span class="">   93: 
+</span><span class="">   94: =head1 METHODS
+</span><span class="">   95: 
+</span><span class="">   96: =head2 check( $context )
+</span><span class="">   97: 
+</span><span class="">   98: Locates the first available META file, parses it, and validates required fields.
+</span><span class="">   99: 
+</span><span class="">  100: =head3 API SPECIFICATION
+</span><span class="">  101: 
+</span><span class="">  102: =head4 Input
+</span><span class="">  103: 
+</span><span class="">  104:   $context : App::Project::Doctor::Context
+</span><span class="">  105: 
+</span><span class="">  106: =head4 Output
+</span><span class="">  107: 
+</span><span class="">  108:   List of App::Project::Doctor::Finding --
+</span><span class="">  109:     warning         when no META.* file is found (builder file present),
+</span><span class="">  110:     warning + error when no META.* and no builder file found,
+</span><span class="">  111:     error           when the META file cannot be parsed,
+</span><span class="">  112:     one error per missing required field (name/version/author/abstract/license),
+</span><span class="">  113:     pass            when all required fields are present.
+</span><span class="">  114: 
+</span><span class="">  115: =head3 MESSAGES
+</span><span class="">  116: 
+</span><span class="">  117:   Code | Trigger                     | Resolution
+</span><span class="">  118:   -----|-----------------------------|-----------------------------------------
+</span><span class="">  119:   M001 | No META.* file found        | Run builder to generate (make or dzil)
+</span><span class="">  120:   M002 | META parse failure          | Correct malformed YAML/JSON by hand
+</span><span class="">  121:   M003 | Required META field missing | Add field to Makefile.PL / dist.ini
+</span><span class="">  122: 
+</span><span class="">  123: =head3 FORMAL SPECIFICATION
+</span><span class="">  124: 
+</span><span class="">  125:   check : Context -&gt; [Finding]
+</span><span class="">  126:   check ctx ==
+</span><span class="">  127:     let f = first meta_file existing in ctx
+</span><span class="">  128:     in  if f = undef then [warning] ++ (if no builder then [error] else [])
+</span><span class="">  129:         else let m = parse f
+</span><span class="">  130:              in  if parse_fails then [error]
+</span><span class="">  131:                  else [error per missing field] ++ (if all ok then [pass] else [])
+</span><span class="">  132: 
+</span><span class="">  133: =head1 AUTHOR
+</span><span class="">  134: 
+</span><span class="">  135: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  136: 
+</span><span class="">  137: =head1 LICENSE
+</span><span class="">  138: 
+</span><span class="">  139: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  140: This library is free software; you can redistribute it and/or modify
+</span><span class="">  141: it under the same terms as Perl itself.
+</span><span class="">  142: 
+</span><span class="">  143: =cut
+</span></pre>
+
+<script>
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+}
+
+(function() {
+    const saved = localStorage.getItem('theme');
+    if(saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+})();
+
+document.addEventListener("mousemove", function(e) {
+	document.querySelectorAll(".lcsaj-tip-text").forEach(function(tip) {
+		tip.style.left = (e.clientX + 12) + "px";
+		tip.style.top  = (e.clientY + 12) + "px";
+	});
+});
+</script>
+</body>
+</html>
+	
