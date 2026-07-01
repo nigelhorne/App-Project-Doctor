@@ -117,7 +117,7 @@ App::Project::Doctor::Check::Tests - Check that a test suite exists and passes
 
 Three-stage check: (1) C<t/> directory present, (2) at least one C<.t> file
 present, (3) C<prove -l> exits 0.  A missing test suite generates a fixable
-finding that delegates to L<App::Test::Generator>.
+finding that creates a minimal C<t/00-smoke.t> scaffold.
 
 =head1 METHODS
 
@@ -137,8 +137,8 @@ finding that delegates to L<App::Test::Generator>.
 
   Code | Trigger                     | Resolution
   -----|-----------------------------|-----------------------------------------
-  T001 | t/ missing                  | Fix scaffolds via App::Test::Generator
-  T002 | t/ present, no .t files     | Fix scaffolds via App::Test::Generator
+  T001 | t/ missing                  | Fix creates t/ and a minimal t/00-smoke.t
+  T002 | t/ present, no .t files     | Fix creates a minimal t/00-smoke.t
   T003 | prove exits non-zero        | Fix failing tests manually
 
 =head3 FORMAL SPECIFICATION
@@ -152,7 +152,7 @@ finding that delegates to L<App::Test::Generator>.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

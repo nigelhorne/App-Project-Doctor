@@ -4,6 +4,10 @@ package App::Project::Doctor::Check::Role;
 # base class App::Project::Doctor::Check::Base.
 # This file exists only to avoid breaking any code that loaded it by name.
 
+use strict;
+use warnings;
+use autodie qw(:all);
+
 use parent -norequire, 'App::Project::Doctor::Check::Base';
 
 our $VERSION = '0.01';
@@ -23,7 +27,7 @@ compatibility only.  New code should C<use parent 'App::Project::Doctor::Check::
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

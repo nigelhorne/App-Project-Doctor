@@ -22,8 +22,8 @@ App::Project::Doctor - Unified pre-release health check for Perl CPAN distributi
 # DESCRIPTION
 
 Orchestrates a suite of diagnostic checks against a Perl CPAN distribution,
-combining [App::Workflow::Lint](https://metacpan.org/pod/App%3A%3AWorkflow%3A%3ALint), [App::GHGen](https://metacpan.org/pod/App%3A%3AGHGen), [App::makefilepl2cpanfile](https://metacpan.org/pod/App%3A%3Amakefilepl2cpanfile),
-and [App::Test::Generator](https://metacpan.org/pod/App%3A%3ATest%3A%3AGenerator) into a single interactive pre-upload tool.
+combining [App::Workflow::Lint](https://metacpan.org/pod/App%3A%3AWorkflow%3A%3ALint), [App::GHGen::Generator](https://metacpan.org/pod/App%3A%3AGHGen%3A%3AGenerator), [App::makefilepl2cpanfile](https://metacpan.org/pod/App%3A%3Amakefilepl2cpanfile)
+into a single interactive pre-upload tool.
 
 Each enabled `App::Project::Doctor::Check::*` plugin receives an
 [App::Project::Doctor::Context](https://metacpan.org/pod/App%3A%3AProject%3A%3ADoctor%3A%3AContext) and returns a list of

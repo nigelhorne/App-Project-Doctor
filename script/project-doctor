@@ -4,8 +4,9 @@ use strict;
 use warnings;
 use autodie qw(:all);
 
-use Getopt::Long qw(:config no_auto_abbrev bundling);
 use Carp qw(croak);
+use File::Spec;
+use Getopt::Long qw(:config no_auto_abbrev bundling);
 use Pod::Usage qw(pod2usage);
 
 our $VERSION = '0.01';
@@ -32,9 +33,8 @@ GetOptions(
 
 my $path = shift @ARGV // '.';
 
-unless ($opts{format} =~ /^(?:text|json|tap)$/) {
-	die "Unknown --format '$opts{format}'. Valid: text, json, tap\n";
-}
+croak "Unknown --format '$opts{format}'. Valid: text, json, tap\n"
+	unless $opts{format} =~ /^(?:text|json|tap)$/;
 
 # ---------------------------------------------------------------------------
 # Build and run Doctor
@@ -75,13 +75,11 @@ if ($opts{format} eq 'text' && $report->fixable) {
 	# --fix  -> apply all non-interactively
 	# --no-fix -> skip
 	# (default) -> prompt
-	if (defined $opts{fix} && !$opts{fix}) {
-		# --no-fix: do nothing
-	} else {
+	unless (defined $opts{fix} && !$opts{fix}) {
 		require App::Project::Doctor::Context;
 		my $fixer = App::Project::Doctor::Fixer->new(
 			report          => $report,
-			context         => App::Project::Doctor::Context->new(path => $path),
+			context         => App::Project::Doctor::Context->new(root => $path),
 			non_interactive => ($opts{fix} ? 1 : 0),
 		);
 		$fixer->run;
@@ -161,9 +159,15 @@ In default execution order:
   Security        strict/warnings present; no hardcoded credentials
   CpanReadiness   Version format, Changes, MANIFEST, README present
 
+=head1 LIMITATIONS
+
+The fix context is built from C<PATH>, not from the detected root.  In the
+rare case where C<PATH> is not the project root (e.g. a subdirectory), the
+Context may have a different root than Doctor used.
+
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

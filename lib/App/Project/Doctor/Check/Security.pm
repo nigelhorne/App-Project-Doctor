@@ -156,7 +156,7 @@ Pragma fixes are automated; credential findings require manual resolution.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

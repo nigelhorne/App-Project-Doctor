@@ -99,10 +99,19 @@ sub _check_pod {
 sub _fix_scaffold_pod {
 	my ($ctx, $rel_path) = @_;
 	return sub {
+		local $@;    # protect caller's $@ from autodie's internal eval
 		my $abs = $ctx->abs_path($rel_path);
 		(my $pkg = $rel_path) =~ s{^lib/}{}; $pkg =~ s{/}{::}g; $pkg =~ s{\.pm$}{};
-		open my $fh, '>>', $abs;
-		print {$fh} <<"END_POD";
+
+		# Read the existing file, then strip trailing `1;` so it appears
+		# exactly once in the rewritten file (after the POD skeleton).
+		open my $rfh, '<', $abs;
+		my $content = do { local $/; <$rfh> };
+		close $rfh;
+		$content =~ s/\s*\n?1;\s*\z//s;
+
+		open my $wfh, '>', $abs;
+		print {$wfh} $content, <<"END_POD";
 
 1;
 
@@ -122,7 +131,7 @@ $pkg - (description goes here)
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh\@bandsman.co.uk> >>
+Nigel Horne C<< <njh\@nigelhorne.com> >>
 
 =head1 LICENSE
 
@@ -132,7 +141,7 @@ it under the same terms as Perl itself.
 
 =cut
 END_POD
-		close $fh;
+		close $wfh;
 	};
 }
 
@@ -167,7 +176,7 @@ POD at all get a fixable finding that appends a minimal skeleton.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

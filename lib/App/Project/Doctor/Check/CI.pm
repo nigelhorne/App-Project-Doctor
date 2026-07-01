@@ -95,7 +95,7 @@ Inspects the distro root for any recognised CI configuration.
 
   Code | Trigger           | Resolution
   -----|-------------------|------------------------------------
-  C001 | No CI config      | Fix generates a workflow via App::GHGen
+  C001 | No CI config      | Fix generates a workflow via App::GHGen::Generator
 
 =head3 FORMAL SPECIFICATION
 
@@ -104,7 +104,7 @@ Inspects the distro root for any recognised CI configuration.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

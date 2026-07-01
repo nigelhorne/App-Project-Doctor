@@ -106,7 +106,7 @@ sub render_text {
 	for my $name (@order) {
 		my @group = @{ $by_check{$name} };
 		my $sev   = _worst_severity(\@group);
-		my $icon  = $ICON{$sev} // '[?]';
+		my $icon  = $ICON{$sev};
 		my ($lead) = grep { $_->severity ne 'pass' } @group;
 		my $summary = $lead ? $lead->message : $group[0]->message;
 
@@ -398,7 +398,7 @@ TAP string.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

@@ -5,9 +5,9 @@ use warnings;
 use autodie qw(:all);
 
 use Carp qw(croak carp);
-use Readonly;
-
+use Params::Get;
 use Params::Validate::Strict qw(validate_strict);
+use Readonly;
 
 our $VERSION = '0.01';
 
@@ -30,11 +30,14 @@ Readonly::Hash my %VALID_SEVERITY => map { $_ => 1 } qw(error warning pass info)
 
 sub new {
 	my $class = shift;
-	# Validate message first so the documented error fires for undef and empty,
-	# before Params::Validate can emit its own generic type error.
+
+	# Validate message before Params::Validate::Strict runs, so the caller sees our
+	# message ("message must be a non-empty string") rather than a generic
+	# validate_strict type error.
 	my %raw = @_;
 	croak 'message must be a non-empty string'
 		unless defined $raw{message} && length $raw{message};
+
 	my $args = validate_strict(
 		schema => {
 			severity   => { type => 'scalar',  optional => 1, default => 'info'    },
@@ -45,14 +48,11 @@ sub new {
 			file       => { type => 'scalar',  optional => 1, default => ''        },
 			line       => { type => 'integer', optional => 1, min => 1             },
 		},
-		args => {@_},
-	) or croak $@;
+		args => Params::Get::get_params(undef, \@_) || {},
+	);
 
 	croak "Invalid severity '$args->{severity}'"
 		unless $VALID_SEVERITY{ $args->{severity} };
-
-	croak 'message must be a non-empty string'
-		unless defined $args->{message} && length $args->{message};
 
 	return bless $args, $class;
 }
@@ -68,7 +68,6 @@ sub fix        { $_[0]->{fix}        }
 sub check_name { $_[0]->{check_name} }
 sub file       { $_[0]->{file}       }
 sub line       { $_[0]->{line}       }
-sub has_fix    { defined $_[0]->{fix} }
 
 # ---------------------------------------------------------------------------
 # Public methods
@@ -80,10 +79,8 @@ Returns 1 when this finding carries an automated fix coderef, 0 otherwise.
 
 =cut
 
-sub is_fixable {
-	my $self = shift;
-	return $self->has_fix ? 1 : 0;
-}
+sub is_fixable { defined $_[0]->{fix} ? 1 : 0 }
+sub has_fix     { defined $_[0]->{fix} ? 1 : 0 }
 
 =head2 icon
 
@@ -91,10 +88,9 @@ Returns the bracketed ASCII status icon for this finding's severity.
 
 =cut
 
-sub icon {
-	my $self = shift;
-	return $SEVERITY_ICON{ $self->severity } // '[?]';
-}
+# Severity is validated in new(); every valid severity is a key in %SEVERITY_ICON,
+# so no fallback is needed.
+sub icon { $SEVERITY_ICON{ $_[0]->{severity} } }
 
 =head2 to_hash
 
@@ -186,8 +182,8 @@ Blessed hashref of type C<App::Project::Doctor::Finding>.
 
 =head1 ACCESSORS
 
-C<severity>, C<message>, C<detail>, C<fix>, C<check_name>, C<file>, C<line>,
-C<has_fix> -- all read-only.
+C<severity>, C<message>, C<detail>, C<fix>, C<check_name>, C<file>, C<line>
+-- all read-only.
 
 =head1 METHODS
 
@@ -218,7 +214,7 @@ None.
 
 =head4 Output
 
-String.
+String -- one of C<[v]>, C<[X]>, C<[!]>, C<[i]>.
 
 =head2 to_hash
 
@@ -238,7 +234,8 @@ HashRef with keys: severity, message, detail, check_name, file, line (if set).
 
   Code | Trigger                       | Resolution
   -----|-------------------------------|----------------------------
-  (none currently defined)
+  F001 | message is undef or empty     | Provide a non-empty message
+  F002 | severity is not a valid value | Use error|warning|pass|info
 
 =head3 FORMAL SPECIFICATION
 
@@ -261,9 +258,12 @@ HashRef with keys: severity, message, detail, check_name, file, line (if set).
 
 The C<fix> coderef is not serialisable and is omitted from C<to_hash>.
 
+Encapsulation of private helpers is enforced by convention only; a future
+migration to C<Sub::Private> in enforce mode is tracked as a TODO.
+
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

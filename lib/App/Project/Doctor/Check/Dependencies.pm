@@ -170,7 +170,7 @@ and compares against C<cpanfile> or C<Makefile.PL> prerequisites
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

@@ -32,7 +32,7 @@ sub new {
 			root    => { type => 'scalar', optional => 1, default => '.' },
 			verbose => { type => 'scalar', optional => 1, default => 0   },
 		},
-	) or croak $@;
+	);
 
 	croak "root '$args->{root}' is not a directory"
 		unless -d $args->{root};
@@ -383,7 +383,7 @@ C<git_root> shells out to C<git>; returns undef when git is not installed.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

@@ -37,8 +37,8 @@ App::Project::Doctor - Unified pre-release health check for Perl CPAN distributi
 =head1 DESCRIPTION
 
 Orchestrates a suite of diagnostic checks against a Perl CPAN distribution,
-combining L<App::Workflow::Lint>, L<App::GHGen>, L<App::makefilepl2cpanfile>,
-and L<App::Test::Generator> into a single interactive pre-upload tool.
+combining L<App::Workflow::Lint>, L<App::GHGen::Generator>, L<App::makefilepl2cpanfile>
+into a single interactive pre-upload tool.
 
 Each enabled C<App::Project::Doctor::Check::*> plugin receives an
 L<App::Project::Doctor::Context> and returns a list of
@@ -140,7 +140,7 @@ sub new {
 			skip    => { type => 'arrayref', optional => 1, default => []                },
 			verbose => { type => 'scalar',   optional => 1, default => 0                 },
 		},
-	) or croak $@;
+	);
 	return bless $args, $class;
 }
 
@@ -279,8 +279,8 @@ Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 
-Copyright (C) 2026 Nigel Horne.
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
+Usage is subject to the GPL2 licence terms.
+If you use it,
+please let me know.
 
 =cut

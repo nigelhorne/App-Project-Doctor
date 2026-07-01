@@ -116,7 +116,7 @@ sub _run_fixer_interactive {
 # ===========================================================================
 
 subtest 'Finding::new -- undef message croaks immediately (pre-PVS guard)' => sub {
-	# The early guard fires before Params::Validate sees the args;
+	# The early guard fires before Params::Validate::Strict sees the args;
 	# the documented error message must be exact.
 	throws_ok { $Finding->new(message => undef, check_name => 'T') }
 		qr/message must be a non-empty string/,

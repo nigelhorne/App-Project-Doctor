@@ -5,8 +5,9 @@ use warnings;
 use autodie qw(:all);
 
 use Carp qw(croak carp);
-use Scalar::Util qw(blessed);
+use Params::Get;
 use Params::Validate::Strict qw(validate_strict);
+use Scalar::Util qw(blessed);
 
 our $VERSION = '0.01';
 
@@ -16,18 +17,24 @@ our $VERSION = '0.01';
 
 sub new {
 	my $class = shift;
+
+	# validate_strict enforces type => 'object' (blessed) before reaching
+	# the isa guard below.  The extra blessed() call is therefore redundant
+	# but the isa() check is live and must remain.
 	my $args = validate_strict(
 		schema => {
 			report          => { type => 'object'                          },
 			context         => { type => 'object'                          },
 			non_interactive => { type => 'scalar', optional => 1, default => 0 },
 		},
-		args => {@_},
-	) or croak $@;
-	croak "report must be an App::Project::Doctor::Report"
-		unless blessed($args->{report}) && $args->{report}->isa('App::Project::Doctor::Report');
-	croak "context must be an App::Project::Doctor::Context"
-		unless blessed($args->{context}) && $args->{context}->isa('App::Project::Doctor::Context');
+		args => Params::Get::get_params(undef, \@_) || {},
+	);
+
+	croak 'report must be an App::Project::Doctor::Report'
+		unless $args->{report}->isa('App::Project::Doctor::Report');
+	croak 'context must be an App::Project::Doctor::Context'
+		unless $args->{context}->isa('App::Project::Doctor::Context');
+
 	return bless $args, $class;
 }
 
@@ -63,6 +70,22 @@ sub run {
 # Private helpers
 # ---------------------------------------------------------------------------
 
+# Purpose:    Print the numbered fix list to STDOUT.
+# Entry:      @{$fixable} is a non-empty arrayref of Finding objects.
+# Exit:       Nothing returned; side-effect is printed output.
+# Side effects: Writes to STDOUT.
+sub _print_fix_list {
+	my $fixable = shift;
+	print "\nSuggested fixes:\n";
+	my $i = 0;
+	printf "  [%d] %s\n", ++$i, $_->message for @{$fixable};
+	return;
+}
+
+# Purpose:    Prompt the user and dispatch to apply_all or apply_selected.
+# Entry:      @{$fixable} non-empty.
+# Exit:       Number of fixes applied.
+# Side effects: Reads STDIN, writes STDOUT.
 sub _interactive_loop {
 	my ($self, $fixable) = @_;
 
@@ -95,13 +118,11 @@ sub _interactive_loop {
 	return 0;
 }
 
-sub _print_fix_list {
-	my $fixable = shift;
-	print "\nSuggested fixes:\n";
-	my $i = 0;
-	printf "  [%d] %s\n", ++$i, $_->message for @{$fixable};
-}
-
+# Purpose:    Run every fix coderef in @{$fixable}, count successes.
+# Entry:      @{$fixable} may be empty.
+# Exit:       Integer count of successfully applied fixes.
+# Side effects: Calls fix coderefs (filesystem changes), writes STDOUT on success,
+#               calls carp on failure.
 sub _apply_all {
 	my ($self, $fixable) = @_;
 	my $count = 0;
@@ -157,8 +178,8 @@ Set C<non_interactive =E<gt> 1> to apply all fixes without prompting
 
 =head4 Input
 
-  report          : App::Project::Doctor::Report   required
-  context         : App::Project::Doctor::Context  required
+  report          : App::Project::Doctor::Report   required (blessed, isa Report)
+  context         : App::Project::Doctor::Context  required (blessed, isa Context)
   non_interactive : Bool                           default 0
 
 =head4 Output
@@ -202,9 +223,13 @@ Integer -- number of fixes successfully applied.
 
 Reads from STDIN; use C<non_interactive =E<gt> 1> in automated pipelines.
 
+Encapsulation of C<_interactive_loop>, C<_apply_all>, and C<_print_fix_list>
+is enforced by convention only; a future migration to C<Sub::Private> in
+enforce mode is tracked as a TODO.
+
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 

@@ -171,6 +171,7 @@ subtest 'GitHubActions::_lint_workflow -- hash error WITH line number' => sub {
 
 subtest 'GitHubActions::_lint_workflow -- hash error WITHOUT line key' => sub {
 	# Covers the 'defined $_->{line}' ternary FALSE branch inside _lint_workflow.
+	# Refactored: result hash does NOT include the 'line' key when line is absent.
 	require App::Project::Doctor::Check::GitHubActions;
 	my @errors;
 	{
@@ -180,7 +181,22 @@ subtest 'GitHubActions::_lint_workflow -- hash error WITHOUT line key' => sub {
 	}
 	restore_all();
 	is(  $errors[0]{message}, 'schema mismatch', 'message from hash' );
-	ok( !defined $errors[0]{line}, 'line is undef when hash has no line key' );
+	ok( !exists $errors[0]{line}, 'line key absent from result when not defined' );
+};
+
+subtest 'GitHubActions::_lint_workflow -- hash with undef message uses fallback string' => sub {
+	# After refactor: '// "$_"' (hashref stringification) replaced with
+	# '// "(unknown lint error)"' so the fallback is a human-readable string.
+	require App::Project::Doctor::Check::GitHubActions;
+	my @errors;
+	{
+		my $g = mock_scoped 'App::Workflow::Lint::lint'
+			=> sub { return ({line => 5}) };    # message key is absent (undef)
+		@errors = App::Project::Doctor::Check::GitHubActions::_lint_workflow('/fake.yml');
+	}
+	restore_all();
+	is( $errors[0]{message}, '(unknown lint error)', 'undef message uses readable fallback' );
+	is( $errors[0]{line},    5,                      'line still extracted from hash' );
 };
 
 subtest 'GitHubActions::_lint_workflow -- non-hash (string) error stringified' => sub {
@@ -310,7 +326,7 @@ subtest 'Pod::check -- valid POD returns pass' => sub {
 	is( $f[0]->severity, $SEV_PASS, 'severity is pass' );
 };
 
-subtest 'Pod::check -- no POD produces fixable error; fix appends skeleton' => sub {
+subtest 'Pod::check -- no POD produces fixable error; fix rewrites with skeleton' => sub {
 	my $dir = _distro(
 		'Makefile.PL' => '',
 		'lib/Bare.pm' => "package Bare;\n1;\n",
@@ -323,13 +339,18 @@ subtest 'Pod::check -- no POD produces fixable error; fix appends skeleton' => s
 	like($errs[0]->message, qr/No POD found/i, 'message says No POD found' );
 	ok(  $errs[0]->is_fixable, 'finding carries fix coderef' );
 
-	# Apply the fix and verify POD skeleton was appended.
+	# Apply the fix and verify POD skeleton was written (not just appended).
 	my $out;
 	open(local *STDOUT, '>', \$out) or die;
 	$errs[0]->fix->($ctx);
 	my $content = $ctx->slurp('lib/Bare.pm');
-	like($content, qr/=head1 NAME/, 'fix appended =head1 NAME' );
+	like($content, qr/=head1 NAME/, 'fix wrote =head1 NAME' );
 	like($content, qr/Bare/,        'fix included the package name' );
+
+	# Regression: _fix_scaffold_pod previously used '>>' (append) which produced
+	# a duplicate `1;` line.  Verify the file has exactly one `1;` at the top level.
+	my @one_lines = $content =~ /^1;$/mg;
+	is( scalar @one_lines, 1, 'exactly one "1;" line in fixed file (no duplication)' );
 	diag "fixed content tail:\n" . substr($content, -200) if $ENV{TEST_VERBOSE};
 };
 
@@ -714,39 +735,30 @@ subtest 'Doctor::run -- check() that throws is carped and does not abort run' =>
 };
 
 # ===========================================================================
-# Dead code documentation
+# Dead code resolution log
 # ===========================================================================
 #
-# The following paths are STRUCTURALLY UNREACHABLE.  They are noted here for
-# maintainer review; no executable test is written for them.
+# The following previously unreachable paths have been RESOLVED in the critique
+# refactor.  They are listed here for audit purposes.
 #
-# 1. Finding::icon -- '// "[?]"' fallback (Finding.pm:96)
-#    Finding::new validates severity against %VALID_SEVERITY before storing it.
-#    All four valid severities (error/warning/pass/info) have entries in
-#    %SEVERITY_ICON.  A Finding with an unknown severity can never be
-#    constructed, so the '[?]' default is structurally dead.
-#    RECOMMENDATION: Remove the '// "[?]"' from icon().
+# 1. Finding::icon -- '// "[?]"' fallback  [RESOLVED -- removed]
+#    Finding::new validates severity against %VALID_SEVERITY.  All four valid
+#    severities are keys in %SEVERITY_ICON.  The '[?]' fallback was removed.
 #
-# 2. Finding::new -- second 'croak message must be a non-empty string' (lines 54-55)
-#    The first guard (lines 36-37) rejects undef and empty messages before
-#    validate_strict runs.  validate_strict does not modify the 'message'
-#    value, so the second croak after validate can never fire.
-#    RECOMMENDATION: Remove lines 54-55 as redundant dead code.
+# 2. Finding::new -- second 'croak message must be a non-empty string' [RESOLVED -- removed]
+#    The first guard (before validate_strict) already catches empty messages.
+#    The second croak after validate_strict was removed as redundant.
 #
-# 3. Report::render_text -- '$ICON{$sev} // "[?]"' (Report.pm:109)
-#    _worst_severity returns only severities that come from real Finding objects
-#    which are validated on construction.  All valid severities are keys in %ICON.
-#    RECOMMENDATION: Replace with '$ICON{$sev}' and add a croak for the impossible case.
+# 3. Report::render_text -- '$ICON{$sev} // "[?]"' [RESOLVED -- removed]
+#    _worst_severity only returns validated severities; all are keys in %ICON.
+#    The '// "[?]"' fallback was removed.
 #
-# 4. Fixer::new -- '!blessed($args->{report})' condition (lines 28/30)
-#    Params::Validate::Strict with type => 'object' enforces blessed references
-#    at validate_strict time.  An unblessed ref causes validate_strict to throw
-#    before line 28 is reached.  The isa guard can only ever see a blessed ref.
+# 4. Fixer::new -- '!blessed($args->{report/context})' guards [RESOLVED -- simplified]
+#    Params::Validate::Strict type => 'object' ensures blessed before the isa
+#    guards run.  The redundant blessed() checks were removed; isa() checks kept.
 #
-# 5. Doctor::new / Fixer::new -- 'or croak $@' (line 143 / line 26)
-#    Params::Validate::Strict throws (dies with a message) on failure rather
-#    than returning undef.  The 'or croak $@' idiom is never reached.
-#    RECOMMENDATION: Document this as a known Params::Validate::Strict
-#    behavior divergence from the CLAUDE.md contract, or wrap in eval.
+# 5. Doctor::new / Context::new / Fixer::new -- 'or croak $@' [RESOLVED -- removed]
+#    Params::Validate::Strict throws (dies) on failure rather than returning
+#    undef.  The 'or croak $@' branches were removed from all three constructors.
 
 done_testing;

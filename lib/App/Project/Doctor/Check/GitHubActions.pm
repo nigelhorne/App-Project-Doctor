@@ -7,6 +7,7 @@ use autodie qw(:all);
 use parent -norequire, 'App::Project::Doctor::Check::Base';
 
 use Carp qw(croak carp);
+use File::Spec;
 use Readonly;
 
 our $VERSION = '0.01';
@@ -81,7 +82,10 @@ sub _lint_workflow {
 	my @raw    = $linter->lint($abs_path);
 	return map {
 		ref $_ eq 'HASH'
-			? { message => $_->{message} // "$_", line => $_->{line} }
+			? {
+				message => $_->{message} // '(unknown lint error)',
+				(defined $_->{line} ? (line => $_->{line}) : ()),
+			  }
 			: { message => "$_" }
 	} @raw;
 }
@@ -113,7 +117,7 @@ App::Project::Doctor::Check::GitHubActions - Validate GitHub Actions workflows
 =head1 DESCRIPTION
 
 Uses L<App::Workflow::Lint> to validate every C<.yml>/C<.yaml> file under
-C<.github/workflows/>.  A fix via L<App::GHGen> is offered when no files exist.
+C<.github/workflows/>.  A fix via L<App::GHGen::Generator> is offered when no files exist.
 
 =head1 METHODS
 
@@ -139,7 +143,7 @@ Validates all GitHub Actions workflow YAML files.
 
   Code | Trigger                       | Resolution
   -----|-------------------------------|-------------------------------------
-  G001 | workflows/ has no YAML files  | Fix generates a workflow via App::GHGen
+  G001 | workflows/ has no YAML files  | Fix generates a workflow via App::GHGen::Generator
   G002 | Lint error in a workflow file | Edit the file to correct syntax
 
 =head3 FORMAL SPECIFICATION
@@ -153,7 +157,7 @@ Validates all GitHub Actions workflow YAML files.
 
 =head1 AUTHOR
 
-Nigel Horne C<< <njh@bandsman.co.uk> >>
+Nigel Horne C<< <njh@nigelhorne.com> >>
 
 =head1 LICENSE
 
