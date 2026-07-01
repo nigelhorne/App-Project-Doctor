@@ -1,4 +1,11 @@
 Revision history for App-Project-Doctor
 
+0.02
+	[ Bug Fixes ]
+	- Added Test::DescribeMe to TEST_REQUIRES
+
+	[ Enhancements ]
+	- Added Test Dashboard
+
 0.01	Wed Jul  1 12:45:37 EDT 2026
         First draft
