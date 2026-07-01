@@ -168,7 +168,9 @@ sub _parse_cpanfile {
 	open my $fh, '<', $path;
 	while (<$fh>) {
 		# Match lines like: requires 'Foo::Bar';   or   requires "Foo::Bar" => '1.00';
-		$mods{$1} = 1 if /^requires\s+['"]?([\w:]+)['"]?/;
+		# \s* allows for indented requires inside 'on' phase blocks, e.g.:
+		#   on 'runtime' => sub { requires 'Foo'; };
+		$mods{$1} = 1 if /^\s*requires\s+['"]?([\w:]+)['"]?/;
 	}
 	close $fh;
 	return \%mods;
@@ -182,8 +184,9 @@ sub _parse_cpanfile_text {
 	my $text = shift;
 	my %mods;
 	# Use the same pattern as _parse_cpanfile but on a string instead of a file.
+	# \s* handles indented requires inside 'on' phase blocks.
 	for my $line (split /\n/, $text) {
-		$mods{$1} = 1 if $line =~ /^requires\s+['"]?([\w:]+)['"]?/;
+		$mods{$1} = 1 if $line =~ /^\s*requires\s+['"]?([\w:]+)['"]?/;
 	}
 	return \%mods;
 }
