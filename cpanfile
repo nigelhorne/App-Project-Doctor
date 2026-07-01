@@ -12,6 +12,7 @@ requires 'File::Find';
 requires 'File::Spec';
 requires 'Getopt::Long', '2.50';
 requires 'JSON::MaybeXS';
+requires 'Object::Configure';
 requires 'Params::Get';
 requires 'Params::Validate::Strict', '0.35';
 requires 'Pod::Checker';
