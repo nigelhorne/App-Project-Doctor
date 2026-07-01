@@ -1,12 +1,21 @@
 #!/usr/bin/env perl
 
+# project-doctor: pre-release health check for Perl CPAN distributions.
+# Run this before every cpan-upload to catch common problems automatically.
+# It checks Tests, CI, META, POD, Dependencies, Licensing, GitHub Actions,
+# Security, and CPAN Readiness, then offers interactive automated fixes.
+
 use strict;
 use warnings;
 use autodie qw(:all);
 
+# croak gives clean error messages that point at this script, not at internals.
 use Carp qw(croak);
+# File::Spec is used to format the "Checking /path/to/dist ..." banner line.
 use File::Spec;
+# Getopt::Long parses --fix, --format, --verbose, etc. from @ARGV.
 use Getopt::Long qw(:config no_auto_abbrev bundling);
+# pod2usage prints the embedded POD as help text and exits.
 use Pod::Usage qw(pod2usage);
 
 our $VERSION = '0.01';
@@ -15,24 +24,28 @@ our $VERSION = '0.01';
 # Parse CLI arguments
 # ---------------------------------------------------------------------------
 
+# Default values for options that may or may not be provided on the command line.
 my %opts = (
-	format => 'text',
-	fix    => undef,        # undef = ask interactively; 1 = auto-apply; 0 = never
+	format => 'text',    # Output format: text (default), json, or tap.
+	fix    => undef,     # undef = ask interactively; 1 = auto-apply; 0 = never.
 );
 
+# Map each CLI flag to its storage location in %opts.
 GetOptions(
-	'check=s'   => \$opts{check},
-	'skip=s'    => \$opts{skip},
-	'fix!'      => \$opts{fix},
-	'format=s'  => \$opts{format},
-	'verbose|v' => \$opts{verbose},
-	'quiet|q'   => \$opts{quiet},
+	'check=s'   => \$opts{check},      # Comma-separated list of checks to run.
+	'skip=s'    => \$opts{skip},       # Comma-separated list of checks to skip.
+	'fix!'      => \$opts{fix},        # --fix applies all; --no-fix skips prompts.
+	'format=s'  => \$opts{format},     # Output format selection.
+	'verbose|v' => \$opts{verbose},    # Show extra per-finding detail.
+	'quiet|q'   => \$opts{quiet},      # Suppress the "Checking..." banner.
 	'help|h'    => sub { pod2usage(-verbose => 1, -exitval => 0) },
 	'man'       => sub { pod2usage(-verbose => 2, -exitval => 0) },
 ) or pod2usage(-verbose => 0, -exitval => 2);
 
+# Any remaining argument after the options is the path to check.
 my $path = shift @ARGV // '.';
 
+# Reject unknown format values early rather than silently ignoring them.
 croak "Unknown --format '$opts{format}'. Valid: text, json, tap\n"
 	unless $opts{format} =~ /^(?:text|json|tap)$/;
 
@@ -40,30 +53,40 @@ croak "Unknown --format '$opts{format}'. Valid: text, json, tap\n"
 # Build and run Doctor
 # ---------------------------------------------------------------------------
 
+# Load the main modules lazily so startup is fast for --help.
 require App::Project::Doctor;
 require App::Project::Doctor::Fixer;
 
+# Assemble the Doctor constructor arguments from the parsed CLI options.
 my %doctor_args = (path => $path);
+# Only include checks/skip when the user explicitly specified them.
 $doctor_args{checks}  = [split /\s*,\s*/, $opts{check}] if defined $opts{check};
 $doctor_args{skip}    = [split /\s*,\s*/, $opts{skip}]  if defined $opts{skip};
 $doctor_args{verbose} = $opts{verbose} // 0;
 
+# Create the Doctor and run all enabled checks.
 my $doctor = App::Project::Doctor->new(%doctor_args);
 
+# Show the user which directory is being checked (unless quiet or non-text mode).
 printf "Checking %s ...\n\n", File::Spec->rel2abs($path)
 	unless $opts{quiet} || $opts{format} ne 'text';
 
+# Run the checks and collect all findings into a Report object.
 my $report = $doctor->run;
 
 # ---------------------------------------------------------------------------
 # Render output
 # ---------------------------------------------------------------------------
 
+# Choose the output format based on --format.
 if ($opts{format} eq 'json') {
+	# JSON output is useful for editor integrations and API consumers.
 	print $report->render_json;
 } elsif ($opts{format} eq 'tap') {
+	# TAP output is consumed by CI harnesses that understand the Test Anything Protocol.
 	print $report->render_tap;
 } else {
+	# Text output is the default: human-readable with icons and a summary line.
 	print $report->render_text(verbose => $opts{verbose} // 0);
 }
 
@@ -71,12 +94,16 @@ if ($opts{format} eq 'json') {
 # Apply fixes
 # ---------------------------------------------------------------------------
 
+# Only offer fixes when using text output and there is at least one fixable finding.
+# JSON and TAP consumers handle fixes differently (or not at all).
 if ($opts{format} eq 'text' && $report->fixable) {
-	# --fix  -> apply all non-interactively
-	# --no-fix -> skip
-	# (default) -> prompt
+	# --fix  -> apply all fixes immediately without asking
+	# --no-fix -> opts{fix} == 0, so skip the entire block
+	# (default) -> opts{fix} is undef, so prompt the user interactively
 	unless (defined $opts{fix} && !$opts{fix}) {
 		require App::Project::Doctor::Context;
+		# Build a Context from $path so fix coderefs can locate files.
+		# Note: $path may be a subdirectory; Doctor used the detected root internally.
 		my $fixer = App::Project::Doctor::Fixer->new(
 			report          => $report,
 			context         => App::Project::Doctor::Context->new(root => $path),
@@ -86,6 +113,7 @@ if ($opts{format} eq 'text' && $report->fixable) {
 	}
 }
 
+# Exit with 0 (no errors) or 1 (errors found) so CI pipelines can gate on it.
 exit $report->exit_code;
 
 __END__

@@ -1,12 +1,20 @@
 package App::Project::Doctor::Finding;
 
+# A Finding is a single diagnostic result produced by a check plugin.
+# It carries a severity level (error/warning/pass/info), a human-readable
+# message, an optional automated fix coderef, and optional file/line location.
+
 use strict;
 use warnings;
 use autodie qw(:all);
 
+# croak reports errors at the caller's location rather than inside this module.
 use Carp qw(croak carp);
+# Params::Get normalises @_ into a hashref, handling both hash and hashref args.
 use Params::Get;
+# validate_strict enforces the parameter schema and throws on any violation.
 use Params::Validate::Strict qw(validate_strict);
+# Readonly creates truly immutable constants -- assigning to them throws at runtime.
 use Readonly;
 
 our $VERSION = '0.01';
@@ -15,13 +23,16 @@ our $VERSION = '0.01';
 # Constants
 # ---------------------------------------------------------------------------
 
+# Maps each severity to the short bracketed icon shown in text-report lines.
 Readonly::Hash my %SEVERITY_ICON => (
-	error   => '[X]',
-	warning => '[!]',
-	pass    => '[v]',
-	info    => '[i]',
+	error   => '[X]',    # Something is broken and must be fixed
+	warning => '[!]',    # Something is suspicious and should be reviewed
+	pass    => '[v]',    # This item is healthy
+	info    => '[i]',    # Informational; no action required
 );
 
+# Used by new() to reject unknown severity strings before storing them.
+# The keys here must exactly match the keys in %SEVERITY_ICON above.
 Readonly::Hash my %VALID_SEVERITY => map { $_ => 1 } qw(error warning pass info);
 
 # ---------------------------------------------------------------------------
@@ -29,15 +40,17 @@ Readonly::Hash my %VALID_SEVERITY => map { $_ => 1 } qw(error warning pass info)
 # ---------------------------------------------------------------------------
 
 sub new {
-	my $class = shift;
+	my $class = shift;    # The package name, e.g. 'App::Project::Doctor::Finding'
 
-	# Validate message before Params::Validate::Strict runs, so the caller sees our
-	# message ("message must be a non-empty string") rather than a generic
-	# validate_strict type error.
+	# Check 'message' before running validate_strict so the caller gets our
+	# descriptive error rather than a generic Params::Validate type error.
 	my %raw = @_;
 	croak 'message must be a non-empty string'
 		unless defined $raw{message} && length $raw{message};
 
+	# validate_strict applies defaults, enforces types, and throws immediately
+	# if anything is wrong.  It never returns undef -- it either returns the
+	# validated hashref or dies.
 	my $args = validate_strict(
 		schema => {
 			severity   => { type => 'scalar',  optional => 1, default => 'info'    },
@@ -51,22 +64,32 @@ sub new {
 		args => Params::Get::get_params(undef, \@_) || {},
 	);
 
+	# validate_strict only checks that severity is a scalar; we also need to
+	# confirm it is one of our four known values.
 	croak "Invalid severity '$args->{severity}'"
 		unless $VALID_SEVERITY{ $args->{severity} };
 
+	# Bless the validated args hashref and return the new object.
 	return bless $args, $class;
 }
 
 # ---------------------------------------------------------------------------
-# Accessors
+# Accessors  (all read-only -- attributes are set once in new() and never changed)
 # ---------------------------------------------------------------------------
 
+# The importance level of this finding: error, warning, pass, or info.
 sub severity   { $_[0]->{severity}   }
+# The short human-readable description of the problem or result.
 sub message    { $_[0]->{message}    }
+# An optional longer explanation; empty string when not set.
 sub detail     { $_[0]->{detail}     }
+# The optional coderef called by Fixer to resolve the issue.
 sub fix        { $_[0]->{fix}        }
+# The name of the check that produced this finding (e.g. 'Tests').
 sub check_name { $_[0]->{check_name} }
+# Relative path to the affected file; empty string when not applicable.
 sub file       { $_[0]->{file}       }
+# Line number in the affected file; undef when not applicable.
 sub line       { $_[0]->{line}       }
 
 # ---------------------------------------------------------------------------
@@ -79,7 +102,11 @@ Returns 1 when this finding carries an automated fix coderef, 0 otherwise.
 
 =cut
 
+# Return exactly 1 or 0 (not just truthy/falsy) so type-checked callers are happy.
 sub is_fixable { defined $_[0]->{fix} ? 1 : 0 }
+
+# has_fix is a synonym for is_fixable kept for backward compatibility.
+# Both methods are part of the public API and must always agree.
 sub has_fix     { defined $_[0]->{fix} ? 1 : 0 }
 
 =head2 icon
@@ -88,8 +115,8 @@ Returns the bracketed ASCII status icon for this finding's severity.
 
 =cut
 
-# Severity is validated in new(); every valid severity is a key in %SEVERITY_ICON,
-# so no fallback is needed.
+# Severity is always valid here because new() checked it against %VALID_SEVERITY,
+# and all valid severities have a matching entry in %SEVERITY_ICON.
 sub icon { $SEVERITY_ICON{ $_[0]->{severity} } }
 
 =head2 to_hash
@@ -101,6 +128,7 @@ The C<fix> coderef is omitted.
 
 sub to_hash {
 	my $self = shift;
+	# Build the base hashref with all fields that are always present.
 	my %h = (
 		severity   => $self->severity,
 		message    => $self->message,
@@ -108,6 +136,7 @@ sub to_hash {
 		check_name => $self->check_name,
 		file       => $self->file,
 	);
+	# Only include 'line' when it was actually set; absent means "unknown location".
 	$h{line} = $self->line if defined $self->line;
 	return \%h;
 }
@@ -200,6 +229,10 @@ None.
 =head4 Output
 
 Integer 1 or 0.
+
+=head2 has_fix
+
+Synonym for C<is_fixable>.  Both are part of the public API.
 
 =head2 icon
 

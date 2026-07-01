@@ -1,17 +1,30 @@
 package App::Project::Doctor::Check::Role;
 
-# Compatibility shim -- the role has been replaced by the traditional OO
-# base class App::Project::Doctor::Check::Base.
-# This file exists only to avoid breaking any code that loaded it by name.
+# ---------------------------------------------------------------------------
+# Backward-compatibility shim.
+#
+# This file used to define a Moose-style role interface for check plugins.
+# The role model was replaced with a simpler traditional OO base class
+# (App::Project::Doctor::Check::Base).  This shim is kept so that any
+# external code that loaded Check::Role by name continues to work.
+# ---------------------------------------------------------------------------
 
+# Enforce strict variable scoping to catch typos at compile time.
 use strict;
+# Emit runtime warnings for common mistakes (undef in string, etc.).
 use warnings;
+# Make all built-in I/O functions throw exceptions instead of returning errors.
 use autodie qw(:all);
 
+# Inherit everything from Check::Base.  The -norequire flag tells 'parent'
+# NOT to automatically 'require' Check::Base; we do that ourselves in Doctor.pm
+# before calling ->new on any check plugin.
 use parent -norequire, 'App::Project::Doctor::Check::Base';
 
+# Module version used by CPAN and 'use Module 0.01' guards.
 our $VERSION = '0.01';
 
+# Return true so Perl knows this file loaded without errors.
 1;
 
 __END__

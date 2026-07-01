@@ -1,12 +1,21 @@
 package App::Project::Doctor::Fixer;
 
+# The Fixer presents a numbered menu of auto-fixable findings, reads the
+# user's answer from STDIN, and calls each selected fix coderef with the
+# current Context.  In non-interactive mode (--fix flag) it applies all
+# fixes immediately without prompting.
+
 use strict;
 use warnings;
 use autodie qw(:all);
 
+# croak dies at the caller's location; carp warns there.
 use Carp qw(croak carp);
+# Params::Get normalises @_ into a hashref before validate_strict sees it.
 use Params::Get;
+# validate_strict enforces parameter schemas and throws immediately on failure.
 use Params::Validate::Strict qw(validate_strict);
+# blessed() checks whether a reference is a blessed object.
 use Scalar::Util qw(blessed);
 
 our $VERSION = '0.01';
@@ -18,32 +27,37 @@ our $VERSION = '0.01';
 sub new {
 	my $class = shift;
 
-	# validate_strict enforces type => 'object' (blessed) before reaching
-	# the isa guard below.  The extra blessed() call is therefore redundant
-	# but the isa() check is live and must remain.
+	# validate_strict with type => 'object' guarantees that report and context
+	# are blessed references before we reach the isa() checks below.
+	# The redundant blessed() call was removed; isa() alone is sufficient.
 	my $args = validate_strict(
 		schema => {
-			report          => { type => 'object'                          },
-			context         => { type => 'object'                          },
+			report          => { type => 'object'                              },
+			context         => { type => 'object'                              },
 			non_interactive => { type => 'scalar', optional => 1, default => 0 },
 		},
 		args => Params::Get::get_params(undef, \@_) || {},
 	);
 
+	# isa() confirms the exact class; validate_strict only checked 'blessed'.
 	croak 'report must be an App::Project::Doctor::Report'
 		unless $args->{report}->isa('App::Project::Doctor::Report');
 	croak 'context must be an App::Project::Doctor::Context'
 		unless $args->{context}->isa('App::Project::Doctor::Context');
 
+	# Store the validated args and return the new Fixer object.
 	return bless $args, $class;
 }
 
 # ---------------------------------------------------------------------------
-# Accessors
+# Accessors  (read-only after construction)
 # ---------------------------------------------------------------------------
 
+# The Report whose fixable findings will be presented to the user.
 sub report          { $_[0]->{report}          }
+# The Context passed to each fix coderef so it can find files.
 sub context         { $_[0]->{context}         }
+# When true, all fixes are applied immediately without user prompting.
 sub non_interactive { $_[0]->{non_interactive} }
 
 # ---------------------------------------------------------------------------
@@ -59,8 +73,11 @@ and calls each selected C<fix> coderef.  Returns the count of fixes applied.
 
 sub run {
 	my $self    = shift;
+	# Collect only the findings that have an associated fix coderef.
 	my @fixable = $self->report->fixable;
+	# Nothing to do if no fixable findings were found.
 	return 0 unless @fixable;
+	# Choose the right mode: silent auto-apply vs. interactive prompt.
 	return $self->non_interactive
 		? $self->_apply_all(\@fixable)
 		: $self->_interactive_loop(\@fixable);
@@ -70,71 +87,84 @@ sub run {
 # Private helpers
 # ---------------------------------------------------------------------------
 
-# Purpose:    Print the numbered fix list to STDOUT.
-# Entry:      @{$fixable} is a non-empty arrayref of Finding objects.
-# Exit:       Nothing returned; side-effect is printed output.
+# Purpose:    Print a numbered list of fixes to STDOUT.
+# Entry:      $fixable is a non-empty arrayref of Finding objects.
+# Exit:       Returns nothing; side-effect is printed output only.
 # Side effects: Writes to STDOUT.
 sub _print_fix_list {
 	my $fixable = shift;
 	print "\nSuggested fixes:\n";
+	# Number each finding starting at 1 so the user can reference them by number.
 	my $i = 0;
 	printf "  [%d] %s\n", ++$i, $_->message for @{$fixable};
 	return;
 }
 
-# Purpose:    Prompt the user and dispatch to apply_all or apply_selected.
-# Entry:      @{$fixable} non-empty.
-# Exit:       Number of fixes applied.
-# Side effects: Reads STDIN, writes STDOUT.
+# Purpose:    Read the user's choice from STDIN and apply the selected fixes.
+# Entry:      $fixable is a non-empty arrayref of Finding objects.
+# Exit:       Integer count of fixes successfully applied.
+# Side effects: Reads STDIN, writes STDOUT, may modify the filesystem via fix coderefs.
 sub _interactive_loop {
 	my ($self, $fixable) = @_;
 
+	# Show the numbered list so the user knows what choices are available.
 	_print_fix_list($fixable);
 	print "\nWould you like me to apply them? [Y/n/1,3] ";
 
+	# Read one line from the user; return 0 cleanly if STDIN is closed (e.g. in a pipe).
 	my $answer = <STDIN>;
 	return 0 unless defined $answer;
-	chomp $answer;
+	chomp $answer;    # Remove the trailing newline before comparing.
 
+	# Empty input or "yes" means apply everything.
 	return $self->_apply_all($fixable)
 		if $answer eq '' || $answer =~ /^y(?:es)?$/i;
 
+	# Explicit "no" -- tell the user we skipped and return.
 	if ($answer =~ /^n(?:o)?$/i) {
 		print "No fixes applied.\n";
 		return 0;
 	}
 
+	# A comma/space-separated list of numbers selects individual fixes.
 	if ($answer =~ /^[\d,\s]+$/) {
-		my $max = scalar @{$fixable};
+		my $max = scalar @{$fixable};    # The highest valid index.
 		my %seen;
+		# Parse the numbers, clamp to valid range, and deduplicate.
 		my @indices  = grep { $_ >= 1 && $_ <= $max && !$seen{$_}++ }
 		               map  { int($_) }
 		               split /[\s,]+/, $answer;
+		# Convert 1-based user indices to 0-based array indices.
 		my @selected = map { $fixable->[$_ - 1] } @indices;
 		return $self->_apply_all(\@selected);
 	}
 
+	# Anything else is unrecognised; be explicit rather than guessing.
 	print "Unrecognised input -- no fixes applied.\n";
 	return 0;
 }
 
-# Purpose:    Run every fix coderef in @{$fixable}, count successes.
-# Entry:      @{$fixable} may be empty.
-# Exit:       Integer count of successfully applied fixes.
-# Side effects: Calls fix coderefs (filesystem changes), writes STDOUT on success,
-#               calls carp on failure.
+# Purpose:    Call every fix coderef in the list and count the successes.
+# Entry:      $fixable is an arrayref of Finding objects (may be empty).
+# Exit:       Integer count of fixes that ran without throwing.
+# Side effects: Calls fix coderefs (may create/modify files), writes to STDOUT on
+#               success, calls carp for each failing fix.
 sub _apply_all {
 	my ($self, $fixable) = @_;
 	my $count = 0;
 	for my $f (@{$fixable}) {
+		# Wrap the fix in eval so a single failure doesn't abort all remaining fixes.
 		my $ok = eval { $f->fix->($self->context); 1 };
 		if ($ok) {
+			# Print confirmation so the user can see what changed.
 			printf "  Applied: %s\n", $f->message;
 			$count++;
 		} else {
+			# Report the failure but continue with the next fix.
 			carp "Fix failed for '" . $f->message . "': $@";
 		}
 	}
+	# Summary line always prints, even when count is 0.
 	printf "\n%d fix(es) applied.\n", $count;
 	return $count;
 }
