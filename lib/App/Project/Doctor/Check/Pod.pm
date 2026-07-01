@@ -14,7 +14,7 @@ use parent -norequire, 'App::Project::Doctor::Check::Base';
 # croak dies with the caller's location; carp warns there.
 use Carp qw(croak carp);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # Short name used in Finding.check_name and text-report columns.
 sub name        { 'POD' }

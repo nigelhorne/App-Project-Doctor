@@ -20,7 +20,7 @@ use File::Spec;
 # Readonly makes constants truly immutable at runtime.
 use Readonly;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # The prove command to run.  --nocolor avoids ANSI codes in the captured output.
 Readonly::Scalar my $PROVE_CMD => 'prove -l --nocolor 2>&1';
@@ -144,7 +144,7 @@ App::Project::Doctor::Check::Tests - Check that a test suite exists and passes
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

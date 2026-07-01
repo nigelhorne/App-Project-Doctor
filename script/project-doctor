@@ -18,7 +18,7 @@ use Getopt::Long qw(:config no_auto_abbrev bundling);
 # pod2usage prints the embedded POD as help text and exits.
 use Pod::Usage qw(pod2usage);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # ---------------------------------------------------------------------------
 # Parse CLI arguments
@@ -72,7 +72,7 @@ printf "Checking %s ...\n\n", File::Spec->rel2abs($path)
 	unless $opts{quiet} || $opts{format} ne 'text';
 
 # Run the checks and collect all findings into a Report object.
-my $report = $doctor->run;
+my $report = $doctor->run();
 
 # ---------------------------------------------------------------------------
 # Render output
@@ -104,12 +104,11 @@ if ($opts{format} eq 'text' && $report->fixable) {
 		require App::Project::Doctor::Context;
 		# Build a Context from $path so fix coderefs can locate files.
 		# Note: $path may be a subdirectory; Doctor used the detected root internally.
-		my $fixer = App::Project::Doctor::Fixer->new(
+		App::Project::Doctor::Fixer->new(
 			report          => $report,
 			context         => App::Project::Doctor::Context->new(root => $path),
 			non_interactive => ($opts{fix} ? 1 : 0),
-		);
-		$fixer->run;
+		)->run();
 	}
 }
 
@@ -124,7 +123,7 @@ project-doctor - Pre-release health check for Perl CPAN distributions
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

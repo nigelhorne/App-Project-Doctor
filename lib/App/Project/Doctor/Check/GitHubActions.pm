@@ -20,7 +20,7 @@ use File::Spec;
 # Readonly makes constants truly immutable at runtime.
 use Readonly;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # The directory under the repo root where workflow files live.
 Readonly::Scalar my $WORKFLOW_DIR => '.github/workflows';

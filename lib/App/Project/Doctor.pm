@@ -22,7 +22,7 @@ use Params::Get;
 use Params::Validate::Strict qw(validate_strict);
 use Object::Configure;	# Allow the object to be configured at runtime
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ App::Project::Doctor - Unified pre-release health check for Perl CPAN distributi
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

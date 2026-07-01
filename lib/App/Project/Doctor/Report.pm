@@ -17,7 +17,7 @@ use Scalar::Util qw(blessed);
 # validate_strict enforces parameter schemas; not used by new() (takes no args).
 use Params::Validate::Strict qw(validate_strict);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -240,7 +240,7 @@ App::Project::Doctor::Report - Aggregate and render diagnostic findings
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

@@ -22,7 +22,7 @@ use Params::Validate::Strict qw(validate_strict);
 # Params::Get normalises @_ so both hash and hashref calling styles work.
 use Params::Get;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -265,7 +265,7 @@ App::Project::Doctor::Context - Distro filesystem context passed to all checks
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

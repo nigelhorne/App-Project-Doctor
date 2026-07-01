@@ -18,7 +18,7 @@ use File::Spec;
 # Readonly creates true constants; assigning to them throws at runtime.
 use Readonly;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # Map human-readable CI system names to the path that indicates each one.
 # The check passes as soon as any of these paths exists under the distro root.

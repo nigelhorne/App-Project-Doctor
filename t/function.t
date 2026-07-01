@@ -1170,6 +1170,50 @@ subtest 'Check::CpanReadiness::check -- pass when everything good' => sub {
 	ok $has_pass, 'pass emitted when all criteria met';
 };
 
+subtest 'Check::CpanReadiness::check -- README.md accepted in place of README' => sub {
+	# README.md is the most common modern form; the check must not flag it as missing.
+	my $dir = make_distro(
+		'Makefile.PL' => '',
+		'lib/Foo.pm'  => "our \$VERSION = '0.01';\n1;\n",
+		'Changes'     => "0.01\n",
+		'MANIFEST'    => '',
+		'README.md'   => '# Foo',    # .md only, no plain README
+	);
+	my @f = App::Project::Doctor::Check::CpanReadiness->new->check(_make_ctx($dir));
+	my $readme_error = grep { $_->message =~ /README.*missing/i } @f;
+	ok !$readme_error, 'README.md satisfies the README requirement';
+};
+
+subtest 'Check::CpanReadiness::check -- README variants all accepted' => sub {
+	# Every supported variant must suppress the README-missing error individually.
+	for my $variant (qw(README README.md README.pod README.rst README.txt)) {
+		my $dir = make_distro(
+			'Makefile.PL' => '',
+			'lib/Foo.pm'  => "our \$VERSION = '0.01';\n1;\n",
+			'Changes'     => "0.01\n",
+			'MANIFEST'    => '',
+			$variant      => '',
+		);
+		my @f = App::Project::Doctor::Check::CpanReadiness->new->check(_make_ctx($dir));
+		my $readme_error = grep { $_->message =~ /README.*missing/i } @f;
+		ok !$readme_error, "$variant satisfies the README requirement";
+	}
+};
+
+subtest 'Check::CpanReadiness::check -- error when no README variant present' => sub {
+	# A distro with none of the accepted README forms must produce an error.
+	my $dir = make_distro(
+		'Makefile.PL' => '',
+		'lib/Foo.pm'  => "our \$VERSION = '0.01';\n1;\n",
+		'Changes'     => "0.01\n",
+		'MANIFEST'    => '',
+		# No README* file of any kind.
+	);
+	my @f = App::Project::Doctor::Check::CpanReadiness->new->check(_make_ctx($dir));
+	my $readme_error = grep { $_->message =~ /README.*missing/i } @f;
+	ok $readme_error, 'error when no README variant is present at all';
+};
+
 subtest 'Check::CpanReadiness::_read_version -- finds version in first module' => sub {
 	my $dir = make_distro(
 		'Makefile.PL' => '',

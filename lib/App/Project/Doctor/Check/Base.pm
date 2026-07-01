@@ -6,7 +6,7 @@ use autodie qw(:all);
 
 use Carp qw(croak);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # ---------------------------------------------------------------------------
 # Constructor
@@ -90,7 +90,7 @@ App::Project::Doctor::Check::Base - Base class for all check plugins
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

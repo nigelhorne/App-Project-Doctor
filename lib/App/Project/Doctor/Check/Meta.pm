@@ -9,7 +9,7 @@ use parent -norequire, 'App::Project::Doctor::Check::Base';
 use Carp qw(croak carp);
 use Readonly;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 Readonly::Array my @REQUIRED_FIELDS => qw(name version author abstract license);
 Readonly::Array my @META_FILES      => qw(META.json META.yml MYMETA.json MYMETA.yml);

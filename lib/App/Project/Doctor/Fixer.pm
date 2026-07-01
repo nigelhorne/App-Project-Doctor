@@ -18,7 +18,7 @@ use Params::Validate::Strict qw(validate_strict);
 # blessed() checks whether a reference is a blessed object.
 use Scalar::Util qw(blessed);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # ---------------------------------------------------------------------------
 # Constructor
@@ -179,7 +179,7 @@ App::Project::Doctor::Fixer - Interactive fix application loop
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

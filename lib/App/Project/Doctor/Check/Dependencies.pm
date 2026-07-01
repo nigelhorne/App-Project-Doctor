@@ -9,7 +9,7 @@ use parent -norequire, 'App::Project::Doctor::Check::Base';
 use Carp qw(croak carp);
 use Readonly;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # Modules that ship with Perl core and need no prereq declaration.
 # 'lib' and 'Cwd' are pragmas/modules commonly seen in source but not CPAN deps.

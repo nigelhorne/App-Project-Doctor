@@ -17,7 +17,7 @@ use Params::Validate::Strict qw(validate_strict);
 # Readonly creates truly immutable constants -- assigning to them throws at runtime.
 use Readonly;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -151,7 +151,7 @@ App::Project::Doctor::Finding - A single diagnostic finding produced by a check
 
 =head1 VERSION
 
-0.01
+0.02
 
 =head1 SYNOPSIS
 

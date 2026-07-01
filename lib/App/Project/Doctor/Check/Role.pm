@@ -21,8 +21,8 @@ use autodie qw(:all);
 # before calling ->new on any check plugin.
 use parent -norequire, 'App::Project::Doctor::Check::Base';
 
-# Module version used by CPAN and 'use Module 0.01' guards.
-our $VERSION = '0.01';
+# Module version used by CPAN and 'use Module 0.02' guards.
+our $VERSION = '0.02';
 
 # Return true so Perl knows this file loaded without errors.
 1;

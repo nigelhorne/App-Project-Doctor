@@ -9,7 +9,7 @@ use parent -norequire, 'App::Project::Doctor::Check::Base';
 use Carp qw(croak carp);
 use Readonly;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 Readonly::Hash my %LICENSE_KEYWORD => (
 	perl_5   => qr/same terms as perl/i,
