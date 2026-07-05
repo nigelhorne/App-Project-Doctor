@@ -106,8 +106,11 @@ sub _check_pod {
 	require Pod::Checker;
 
 	# Capture Pod::Checker's diagnostic output into a scalar instead of STDERR.
+	# The :encoding(UTF-8) layer is required: Pod::Checker honours =encoding utf8
+	# directives and emits wide characters; without the layer Perl raises
+	# "Wide character in print" before we ever see the error text.
 	my $captured = '';
-	open my $out_fh, '>', \$captured;
+	open my $out_fh, '>:encoding(UTF-8)', \$captured;
 	my $checker = Pod::Checker->new;
 	$checker->parse_from_file($abs_path, $out_fh);
 	close $out_fh;
@@ -147,7 +150,9 @@ sub _fix_scaffold_pod {
 		(my $pkg = $rel_path) =~ s{^lib/}{}; $pkg =~ s{/}{::}g; $pkg =~ s{\.pm$}{};
 
 		# Read the existing file so we can rewrite it (not just append).
-		open my $rfh, '<', $abs;
+		# UTF-8 encoding layer matches what Pod::Checker expects and preserves
+		# any non-ASCII source characters correctly on the round-trip.
+		open my $rfh, '<:encoding(UTF-8)', $abs;
 		my $content = do { local $/; <$rfh> };
 		close $rfh;
 
@@ -156,7 +161,7 @@ sub _fix_scaffold_pod {
 		$content =~ s/\s*\n?1;\s*\z//s;
 
 		# Write the existing content back followed by the POD skeleton.
-		open my $wfh, '>', $abs;
+		open my $wfh, '>:encoding(UTF-8)', $abs;
 		print {$wfh} $content, <<"END_POD";
 
 1;

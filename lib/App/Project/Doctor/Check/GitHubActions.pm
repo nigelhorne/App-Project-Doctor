@@ -110,7 +110,8 @@ sub _lint_workflow {
 	require App::Workflow::Lint;
 	# App::Workflow::Lint is instantiated fresh per call to avoid any state leakage.
 	my $linter = App::Workflow::Lint->new;
-	my @raw    = $linter->lint($abs_path);
+	# The public API is check_file(), not lint() -- see App::Workflow::Lint docs.
+	my @raw    = $linter->check_file($abs_path);
 
 	# Normalise: linter may return hashrefs OR plain strings.
 	return map {

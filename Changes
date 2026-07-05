@@ -1,5 +1,18 @@
 Revision history for App-Project-Doctor
 
+0.03
+	[ Bug Fixes ]
+	- Check::GitHubActions: called $linter->lint() which does not exist in
+	  App::Workflow::Lint; corrected to $linter->check_file() (the actual
+	  public API).  Regression subtest added to t/extended_tests.t.
+	- Check::Pod: "Wide character in print" from Pod::Checker when processing
+	  files with =encoding utf8 or non-ASCII text.  Fixed by opening the
+	  in-memory capture handle and the scaffold fix handles with
+	  :encoding(UTF-8) layers.
+	- Check::License: CPAN::Meta->license croaks when called in scalar context;
+	  _meta_license_id now calls it in list context and takes the first element.
+	  Regression subtest added to t/extended_tests.t.
+
 0.02	Wed Jul  1 14:31:48 EDT 2026
 	[ Bug Fixes ]
 	- Added Test::DescribeMe to TEST_REQUIRES

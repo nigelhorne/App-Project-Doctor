@@ -156,9 +156,12 @@ subtest 'GitHubActions::_lint_workflow -- hash error WITH line number' => sub {
 	# Covers the 'ref $_ eq HASH' branch AND the 'defined $_->{line}' ternary
 	# true-branch inside _lint_workflow.
 	require App::Project::Doctor::Check::GitHubActions;
+	# Pre-load so the require inside _lint_workflow is a no-op and cannot
+	# overwrite the mock we are about to install.
+	require App::Workflow::Lint;
 	my @errors;
 	{
-		my $g = mock_scoped 'App::Workflow::Lint::lint'
+		my $g = mock_scoped 'App::Workflow::Lint::check_file'
 			=> sub { return ({message => 'unexpected key', line => 7}) };
 		@errors = App::Project::Doctor::Check::GitHubActions::_lint_workflow('/fake/ci.yml');
 	}
@@ -173,9 +176,10 @@ subtest 'GitHubActions::_lint_workflow -- hash error WITHOUT line key' => sub {
 	# Covers the 'defined $_->{line}' ternary FALSE branch inside _lint_workflow.
 	# Refactored: result hash does NOT include the 'line' key when line is absent.
 	require App::Project::Doctor::Check::GitHubActions;
+	require App::Workflow::Lint;    # pre-load to protect mock from require overwrite
 	my @errors;
 	{
-		my $g = mock_scoped 'App::Workflow::Lint::lint'
+		my $g = mock_scoped 'App::Workflow::Lint::check_file'
 			=> sub { return ({message => 'schema mismatch'}) };    # no 'line' key
 		@errors = App::Project::Doctor::Check::GitHubActions::_lint_workflow('/fake.yml');
 	}
@@ -188,9 +192,10 @@ subtest 'GitHubActions::_lint_workflow -- hash with undef message uses fallback 
 	# After refactor: '// "$_"' (hashref stringification) replaced with
 	# '// "(unknown lint error)"' so the fallback is a human-readable string.
 	require App::Project::Doctor::Check::GitHubActions;
+	require App::Workflow::Lint;    # pre-load to protect mock from require overwrite
 	my @errors;
 	{
-		my $g = mock_scoped 'App::Workflow::Lint::lint'
+		my $g = mock_scoped 'App::Workflow::Lint::check_file'
 			=> sub { return ({line => 5}) };    # message key is absent (undef)
 		@errors = App::Project::Doctor::Check::GitHubActions::_lint_workflow('/fake.yml');
 	}
@@ -202,15 +207,38 @@ subtest 'GitHubActions::_lint_workflow -- hash with undef message uses fallback 
 subtest 'GitHubActions::_lint_workflow -- non-hash (string) error stringified' => sub {
 	# Covers the 'ref $_ ne HASH' branch inside the map in _lint_workflow.
 	require App::Project::Doctor::Check::GitHubActions;
+	require App::Workflow::Lint;    # pre-load to protect mock from require overwrite
 	my @errors;
 	{
-		my $g = mock_scoped 'App::Workflow::Lint::lint'
+		my $g = mock_scoped 'App::Workflow::Lint::check_file'
 			=> sub { return 'plain string error' };
 		@errors = App::Project::Doctor::Check::GitHubActions::_lint_workflow('/fake.yml');
 	}
 	restore_all();
 	is(  $errors[0]{message}, 'plain string error', 'string error becomes message' );
 	ok( !defined $errors[0]{line}, 'no line for string error' );
+};
+
+subtest 'GitHubActions::_lint_workflow -- calls check_file(), NOT lint()' => sub {
+	# Regression: the original code called $linter->lint() which does not exist in
+	# App::Workflow::Lint; the correct method is check_file().  This subtest
+	# confirms the right method is invoked so the bug cannot silently re-appear.
+	require App::Project::Doctor::Check::GitHubActions;
+	require App::Workflow::Lint;
+	my $called_check_file = 0;
+	my $called_lint       = 0;
+	{
+		# Mock the correct method so it records the call and returns nothing.
+		my $g_cf = mock_scoped 'App::Workflow::Lint::check_file'
+			=> sub { $called_check_file++; return () };
+		# Separately verify the wrong method is never reached.
+		my $g_l  = mock_scoped 'App::Workflow::Lint::lint'
+			=> sub { $called_lint++;       return () };
+		App::Project::Doctor::Check::GitHubActions::_lint_workflow('/fake/any.yml');
+	}
+	restore_all();
+	is( $called_check_file, 1, 'check_file() was called exactly once' );
+	is( $called_lint,       0, 'lint() was NOT called (wrong method name)' );
 };
 
 subtest 'GitHubActions::check -- lint passes: single YAML -> pass finding' => sub {
@@ -433,6 +461,51 @@ subtest 'Pod::check -- slurp failure is skipped; other modules still checked' =>
 	ok(  scalar @carped > 0, 'slurp failure produced a carp' );
 	like($carped[0], qr/Cannot slurp/i, 'carp mentions Cannot slurp' );
 	ok(  scalar @f > 0, 'check produced findings for remaining readable module' );
+};
+
+subtest 'Pod::_check_pod -- no "Wide character in print" on UTF-8 source' => sub {
+	# Regression: the in-memory capture handle was opened without :encoding(UTF-8).
+	# When Pod::Checker honoured an =encoding utf8 directive it emitted wide
+	# characters, causing "Wide character in print" before we saw any error text.
+	# Fixed by opening the handle with '>:encoding(UTF-8)'.
+	require App::Project::Doctor::Check::Pod;
+
+	# Build a .pm with =encoding utf8 and genuine non-ASCII characters.
+	my $utf8_pod = join "\n",
+		'package UniTest;',
+		'1;',
+		'__END__',
+		'',
+		'=encoding utf8',
+		'',
+		'=head1 NAME',
+		'',
+		"UniTest \x{2014} a module with UTF-8 POD: \x{00a9} example",
+		'',
+		'=head1 DESCRIPTION',
+		'',
+		"T\x{00eb}st with \x{00fc}n\x{00ef}c\x{00f6}d\x{00e9}: \x{20ac}.",
+		'',
+		'=cut',
+		'';
+	# Pass a plain placeholder so _distro's unencoded filehandle never sees
+	# wide characters; then overwrite with the real UTF-8 content ourselves.
+	my $dir = _distro('Makefile.PL' => '', 'lib/UniTest.pm' => 'placeholder');
+	my $abs = File::Spec->catfile($dir, 'lib', 'UniTest.pm');
+	open my $fh, '>:encoding(UTF-8)', $abs or die "Cannot write: $!";
+	print {$fh} $utf8_pod;
+	close $fh;
+
+	# Trap any "Wide character" warnings -- there should be none.
+	my @wide_warns;
+	{
+		local $SIG{__WARN__} = sub {
+			push @wide_warns, shift if $_[0] =~ /Wide character/i;
+		};
+		$CHECK_POD->new->check($CONTEXT->new(root => $dir));
+	}
+	is( scalar @wide_warns, 0,
+		'no "Wide character in print" warning from Pod::Checker on UTF-8 source' );
 };
 
 # ===========================================================================
@@ -732,6 +805,51 @@ subtest 'Doctor::run -- check() that throws is carped and does not abort run' =>
 	is(  scalar $report->all_findings, 0, 'no findings added for the throwing check' );
 	ok(  scalar @carped > 0,         'a carp was emitted' );
 	like($carped[0], qr/threw/i,     'carp mentions that the check threw' );
+};
+
+# ===========================================================================
+# Check::License -- list-context regression for CPAN::Meta->license
+# ===========================================================================
+# Regression: _meta_license_id was calling $meta->license in scalar context,
+# which CPAN::Meta croaks on.  This test verifies the check runs without
+# throwing and produces findings (not a croak) for a dist with a META file.
+
+subtest 'Check::License does not croak on CPAN::Meta->license call' => sub {
+	require App::Project::Doctor::Check::License;
+	require App::Project::Doctor::Check::Base;
+
+	# Build a minimal distro with a LICENSE file and a MYMETA.json so that
+	# _meta_license_id is actually invoked against a real (minimal) META file.
+	my $dir = _distro(
+		'Makefile.PL' => "use ExtUtils::MakeMaker;\nWriteMakefile(NAME=>'Foo',VERSION=>'0.01');\n",
+		'LICENSE'     => "This software is copyright (c) 2026 by Nigel Horne.\n"
+		              . "This is free software; you can redistribute it and/or modify it under\n"
+		              . "the same terms as the Perl 5 programming language system itself.\n",
+		# Minimal MYMETA.json so the cross-check branch is exercised.
+		'MYMETA.json' => '{"abstract":"x","author":[],"dynamic_config":0,'
+		              .  '"generated_by":"test","license":["perl_5"],'
+		              .  '"meta-spec":{"url":"http://search.cpan.org/perldoc?CPAN::Meta::Spec","version":"2"},'
+		              .  '"name":"Foo","no_index":{"directory":["t"]},'
+		              .  '"prereqs":{},"release_status":"stable","version":"0.01"}',
+	);
+
+	my $ctx = App::Project::Doctor::Context->new(root => $dir);
+	my $chk = App::Project::Doctor::Check::License->new;
+
+	# The check must not throw -- the regression caused a croak propagating up.
+	my @findings;
+	lives_ok { @findings = $chk->check($ctx) } 'License check does not croak';
+
+	# There should be at least one finding (pass or warning); never zero.
+	ok( scalar @findings > 0, 'License check returns at least one finding' );
+
+	# None of the findings should be a plain scalar -- all must be Finding objects.
+	# NOTE: do not inline grep into ok() -- the label would be consumed as list input.
+	my @non_findings = grep { !ref($_) || !$_->isa('App::Project::Doctor::Finding') } @findings;
+	ok( !@non_findings, 'all returned values are Finding objects' );
+
+	diag("findings: " . join(', ', map { $_->severity . ': ' . $_->message } @findings))
+		if $ENV{TEST_VERBOSE};
 };
 
 # ===========================================================================

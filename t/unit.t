@@ -1059,7 +1059,7 @@ subtest 'Check plugins -- check($ctx) returns a list of Findings' => sub {
 		my $class = "App::Project::Doctor::Check::$suffix";
 
 		# Mock all external calls so the test is self-contained.
-		my $g_wl = mock_scoped 'App::Workflow::Lint::lint'    => sub { () };
+		my $g_wl = mock_scoped 'App::Workflow::Lint::check_file' => sub { () };
 		my $g_gh = mock_scoped 'App::GHGen::generate'         => sub { 1  };
 
 		my @findings;

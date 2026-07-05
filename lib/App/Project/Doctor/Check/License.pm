@@ -84,7 +84,9 @@ sub _meta_license_id {
 	require CPAN::Meta;
 	my $meta = eval { CPAN::Meta->load_file($path) };
 	return undef if $@ || !$meta;
-	return $meta->license;
+	# CPAN::Meta->license must be called in list context; it croaks in scalar context.
+	my ($lic) = $meta->license;
+	return $lic;
 }
 
 1;
