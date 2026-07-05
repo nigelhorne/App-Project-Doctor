@@ -402,106 +402,107 @@ Approximate LCSAJ segments: 17<br>
 </span><span class="">  110: 	require App::Workflow::Lint;
 </span><span class="">  111: 	# App::Workflow::Lint is instantiated fresh per call to avoid any state leakage.
 </span><span class="">  112: 	my $linter = App::Workflow::Lint-&gt;new;
-</span><span class="">  113: 	my @raw    = $linter-&gt;lint($abs_path);
-</span><span class="">  114: 
-</span><span class="">  115: 	# Normalise: linter may return hashrefs OR plain strings.
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  116: 	return map {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  117: 		ref $_ eq &#39;HASH&#39;
-</span><span class="">  118: 			? {
-</span><span class="">  119: 				# Use the message key when present; fall back to a generic string.
-</span><span class="">  120: 				message =&gt; $_-&gt;{message} // &#39;(unknown lint error)&#39;,
-</span><span class="">  121: 				# Only include &#39;line&#39; when the linter actually provided one.
-</span><span class="">  122: 				(defined $_-&gt;{line} ? (line =&gt; $_-&gt;{line}) : ()),
-</span><span class="">  123: 			  }
-</span><span class="">  124: 			: { message =&gt; &quot;$_&quot; }    # Plain string errors have no line number.
-</span><span class="">  125: 	} @raw;
-</span><span class="">  126: }
-</span><span class="">  127: 
-</span><span class="">  128: # Purpose:    Return a coderef that generates a GitHub Actions workflow file.
-</span><span class="">  129: # Entry:      $ctx is the current App::Project::Doctor::Context.
-</span><span class="">  130: # Exit:       Coderef ($ctx) -&gt; void; creates .github/workflows/perl-ci.yml.
-</span><span class="">  131: # Side effects: Creates directories and files under $ctx-&gt;root when called.
-</span><span class="">  132: sub _fix_generate {
-</span><span class="">  133: 	my $ctx = shift;
-</span><span class="">  134: 	# Return the fix as a closure; it captures $ctx but does not run yet.
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  135: 	return sub {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  136: 		my $root = $ctx-&gt;root;
-</span><span class="">  137: 		require App::GHGen::Generator;
-</span><span class="">  138: 		# generate_workflow returns a YAML string or undef on failure.
-</span><span class="">  139: 		my $yaml = App::GHGen::Generator::generate_workflow(&#39;perl&#39;);
-</span><span class="">  140: 		return unless $yaml;    # Nothing to write if generation failed.
-</span><span class="">  141: 		# Build the target directory path in a cross-platform way.
-</span><span class="">  142: 		my $wf_dir = File::Spec-&gt;catdir($root, &#39;.github&#39;, &#39;workflows&#39;);
-</span><span class="">  143: 		require File::Path;
-</span><span class="">  144: 		# make_path creates .github/ and .github/workflows/ if they don&#39;t exist.
-</span><span class="">  145: 		File::Path::make_path($wf_dir);
-</span><span class="">  146: 		# Write the generated YAML to the standard workflow file name.
-</span><span class="">  147: 		open my $fh, &#39;&gt;&#39;, File::Spec-&gt;catfile($wf_dir, &#39;perl-ci.yml&#39;);
-</span><span class="">  148: 		print {$fh} $yaml;
-</span><span class="">  149: 		close $fh;
-</span><span class="">  150: 	};
-</span><span class="">  151: }
-</span><span class="">  152: 
-</span><span class="">  153: 1;
-</span><span class="">  154: 
-</span><span class="">  155: __END__
-</span><span class="">  156: 
-</span><span class="">  157: =head1 NAME
-</span><span class="">  158: 
-</span><span class="">  159: App::Project::Doctor::Check::GitHubActions - Validate GitHub Actions workflows
-</span><span class="">  160: 
-</span><span class="">  161: =head1 DESCRIPTION
-</span><span class="">  162: 
-</span><span class="">  163: Uses L&lt;App::Workflow::Lint&gt; to validate every C&lt;.yml&gt;/C&lt;.yaml&gt; file under
-</span><span class="">  164: C&lt;.github/workflows/&gt;.  A fix via L&lt;App::GHGen::Generator&gt; is offered when no files exist.
-</span><span class="">  165: 
-</span><span class="">  166: =head1 METHODS
-</span><span class="">  167: 
-</span><span class="">  168: =head2 check( $context )
-</span><span class="">  169: 
-</span><span class="">  170: Validates all GitHub Actions workflow YAML files.
-</span><span class="">  171: 
-</span><span class="">  172: =head3 API SPECIFICATION
-</span><span class="">  173: 
-</span><span class="">  174: =head4 Input
-</span><span class="">  175: 
-</span><span class="">  176:   $context : App::Project::Doctor::Context
-</span><span class="">  177: 
-</span><span class="">  178: =head4 Output
-</span><span class="">  179: 
-</span><span class="">  180:   List of App::Project::Doctor::Finding --
-</span><span class="">  181:     info    when .github/workflows/ is absent (CI check owns the error),
-</span><span class="">  182:     warning (fixable) when directory exists but contains no YAML,
-</span><span class="">  183:     one error per lint violation found,
-</span><span class="">  184:     pass    when all workflow files validate cleanly.
-</span><span class="">  185: 
-</span><span class="">  186: =head3 MESSAGES
-</span><span class="">  187: 
-</span><span class="">  188:   Code | Trigger                       | Resolution
-</span><span class="">  189:   -----|-------------------------------|-------------------------------------
-</span><span class="">  190:   G001 | workflows/ has no YAML files  | Fix generates a workflow via App::GHGen::Generator
-</span><span class="">  191:   G002 | Lint error in a workflow file | Edit the file to correct syntax
-</span><span class="">  192: 
-</span><span class="">  193: =head3 FORMAL SPECIFICATION
-</span><span class="">  194: 
-</span><span class="">  195:   check : Context -&gt; [Finding]
-</span><span class="">  196:   check ctx ==
-</span><span class="">  197:     if not exists WORKFLOW_DIR then [info]
-</span><span class="">  198:     else if |workflow_files| = 0 then [warning+fix]
-</span><span class="">  199:     else concat { lint_errors f | f &lt;- workflow_files }
-</span><span class="">  200:          ++ (if all clean then [pass] else [])
-</span><span class="">  201: 
-</span><span class="">  202: =head1 AUTHOR
-</span><span class="">  203: 
-</span><span class="">  204: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  205: 
-</span><span class="">  206: =head1 LICENSE
-</span><span class="">  207: 
-</span><span class="">  208: Copyright (C) 2026 Nigel Horne.
-</span><span class="">  209: This library is free software; you can redistribute it and/or modify
-</span><span class="">  210: it under the same terms as Perl itself.
-</span><span class="">  211: 
-</span><span class="">  212: =cut
+</span><span class="">  113: 	# The public API is check_file(), not lint() -- see App::Workflow::Lint docs.
+</span><span class="">  114: 	my @raw    = $linter-&gt;check_file($abs_path);
+</span><span class="">  115: 
+</span><span class="">  116: 	# Normalise: linter may return hashrefs OR plain strings.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  117: 	return map {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  118: 		ref $_ eq &#39;HASH&#39;
+</span><span class="">  119: 			? {
+</span><span class="">  120: 				# Use the message key when present; fall back to a generic string.
+</span><span class="">  121: 				message =&gt; $_-&gt;{message} // &#39;(unknown lint error)&#39;,
+</span><span class="">  122: 				# Only include &#39;line&#39; when the linter actually provided one.
+</span><span class="">  123: 				(defined $_-&gt;{line} ? (line =&gt; $_-&gt;{line}) : ()),
+</span><span class="">  124: 			  }
+</span><span class="">  125: 			: { message =&gt; &quot;$_&quot; }    # Plain string errors have no line number.
+</span><span class="">  126: 	} @raw;
+</span><span class="">  127: }
+</span><span class="">  128: 
+</span><span class="">  129: # Purpose:    Return a coderef that generates a GitHub Actions workflow file.
+</span><span class="">  130: # Entry:      $ctx is the current App::Project::Doctor::Context.
+</span><span class="">  131: # Exit:       Coderef ($ctx) -&gt; void; creates .github/workflows/perl-ci.yml.
+</span><span class="">  132: # Side effects: Creates directories and files under $ctx-&gt;root when called.
+</span><span class="">  133: sub _fix_generate {
+</span><span class="">  134: 	my $ctx = shift;
+</span><span class="">  135: 	# Return the fix as a closure; it captures $ctx but does not run yet.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  136: 	return sub {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  137: 		my $root = $ctx-&gt;root;
+</span><span class="">  138: 		require App::GHGen::Generator;
+</span><span class="">  139: 		# generate_workflow returns a YAML string or undef on failure.
+</span><span class="">  140: 		my $yaml = App::GHGen::Generator::generate_workflow(&#39;perl&#39;);
+</span><span class="">  141: 		return unless $yaml;    # Nothing to write if generation failed.
+</span><span class="">  142: 		# Build the target directory path in a cross-platform way.
+</span><span class="">  143: 		my $wf_dir = File::Spec-&gt;catdir($root, &#39;.github&#39;, &#39;workflows&#39;);
+</span><span class="">  144: 		require File::Path;
+</span><span class="">  145: 		# make_path creates .github/ and .github/workflows/ if they don&#39;t exist.
+</span><span class="">  146: 		File::Path::make_path($wf_dir);
+</span><span class="">  147: 		# Write the generated YAML to the standard workflow file name.
+</span><span class="">  148: 		open my $fh, &#39;&gt;&#39;, File::Spec-&gt;catfile($wf_dir, &#39;perl-ci.yml&#39;);
+</span><span class="">  149: 		print {$fh} $yaml;
+</span><span class="">  150: 		close $fh;
+</span><span class="">  151: 	};
+</span><span class="">  152: }
+</span><span class="">  153: 
+</span><span class="">  154: 1;
+</span><span class="">  155: 
+</span><span class="">  156: __END__
+</span><span class="">  157: 
+</span><span class="">  158: =head1 NAME
+</span><span class="">  159: 
+</span><span class="">  160: App::Project::Doctor::Check::GitHubActions - Validate GitHub Actions workflows
+</span><span class="">  161: 
+</span><span class="">  162: =head1 DESCRIPTION
+</span><span class="">  163: 
+</span><span class="">  164: Uses L&lt;App::Workflow::Lint&gt; to validate every C&lt;.yml&gt;/C&lt;.yaml&gt; file under
+</span><span class="">  165: C&lt;.github/workflows/&gt;.  A fix via L&lt;App::GHGen::Generator&gt; is offered when no files exist.
+</span><span class="">  166: 
+</span><span class="">  167: =head1 METHODS
+</span><span class="">  168: 
+</span><span class="">  169: =head2 check( $context )
+</span><span class="">  170: 
+</span><span class="">  171: Validates all GitHub Actions workflow YAML files.
+</span><span class="">  172: 
+</span><span class="">  173: =head3 API SPECIFICATION
+</span><span class="">  174: 
+</span><span class="">  175: =head4 Input
+</span><span class="">  176: 
+</span><span class="">  177:   $context : App::Project::Doctor::Context
+</span><span class="">  178: 
+</span><span class="">  179: =head4 Output
+</span><span class="">  180: 
+</span><span class="">  181:   List of App::Project::Doctor::Finding --
+</span><span class="">  182:     info    when .github/workflows/ is absent (CI check owns the error),
+</span><span class="">  183:     warning (fixable) when directory exists but contains no YAML,
+</span><span class="">  184:     one error per lint violation found,
+</span><span class="">  185:     pass    when all workflow files validate cleanly.
+</span><span class="">  186: 
+</span><span class="">  187: =head3 MESSAGES
+</span><span class="">  188: 
+</span><span class="">  189:   Code | Trigger                       | Resolution
+</span><span class="">  190:   -----|-------------------------------|-------------------------------------
+</span><span class="">  191:   G001 | workflows/ has no YAML files  | Fix generates a workflow via App::GHGen::Generator
+</span><span class="">  192:   G002 | Lint error in a workflow file | Edit the file to correct syntax
+</span><span class="">  193: 
+</span><span class="">  194: =head3 FORMAL SPECIFICATION
+</span><span class="">  195: 
+</span><span class="">  196:   check : Context -&gt; [Finding]
+</span><span class="">  197:   check ctx ==
+</span><span class="">  198:     if not exists WORKFLOW_DIR then [info]
+</span><span class="">  199:     else if |workflow_files| = 0 then [warning+fix]
+</span><span class="">  200:     else concat { lint_errors f | f &lt;- workflow_files }
+</span><span class="">  201:          ++ (if all clean then [pass] else [])
+</span><span class="">  202: 
+</span><span class="">  203: =head1 AUTHOR
+</span><span class="">  204: 
+</span><span class="">  205: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  206: 
+</span><span class="">  207: =head1 LICENSE
+</span><span class="">  208: 
+</span><span class="">  209: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  210: This library is free software; you can redistribute it and/or modify
+</span><span class="">  211: it under the same terms as Perl itself.
+</span><span class="">  212: 
+</span><span class="">  213: =cut
 </span></pre>
 
 <script>

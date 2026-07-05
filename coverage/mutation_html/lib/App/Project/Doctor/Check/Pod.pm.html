@@ -394,135 +394,140 @@ Approximate LCSAJ segments: 17<br>
 </span><span class="">  102: # Side effects: Loads Pod::Checker if not already in memory; writes to an in-memory
 </span><span class="">  103: #               filehandle (no disk I/O).
 </span><span class="">  104: sub _check_pod {
-</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">105 → 120 → 131</span></span>  105: 	my $abs_path = shift;
+</span><span class=""><span class="lcsaj-tip"><span class="lcsaj-dot">●</span><span class="lcsaj-tip-text">105 → 123 → 134</span></span>  105: 	my $abs_path = shift;
 </span><span class="">  106: 	require Pod::Checker;
 </span><span class="">  107: 
 </span><span class="">  108: 	# Capture Pod::Checker&#39;s diagnostic output into a scalar instead of STDERR.
-</span><span class="">  109: 	my $captured = &#39;&#39;;
-</span><span class="">  110: 	open my $out_fh, &#39;&gt;&#39;, \$captured;
-</span><span class="">  111: 	my $checker = Pod::Checker-&gt;new;
-</span><span class="">  112: 	$checker-&gt;parse_from_file($abs_path, $out_fh);
-</span><span class="">  113: 	close $out_fh;
-</span><span class="">  114: 
-</span><span class="">  115: 	# If Pod::Checker reported no errors, return an empty list immediately.
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  116: 	return () if ($checker-&gt;num_errors // 0) == 0;
-</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  117: 
-</span><span class="">  118: 	# Parse the captured text output to extract individual error messages.
-</span><span class="">  119: 	my @errors;
-</span><span class="">  120: 	for my $line (split /\n/, $captured) {
-</span><span class="">  121: 		# Skip blank lines in the checker output.
-</span><span class="">  122: 		next unless $line =~ /\S/;
-</span><span class="">  123: 		# Try to extract the line number from the Pod::Checker message.
-</span><span class="">  124: 		my ($lineno) = $line =~ /line\s+(\d+)/i;
-</span><span class="">  125: 		push @errors, {
-</span><span class="">  126: 			message =&gt; $line,
-</span><span class="">  127: 			# Only include &#39;line&#39; in the hashref when we actually found one.
-</span><span class="">  128: 			defined $lineno ? (line =&gt; $lineno) : (),
-</span><span class="">  129: 		};
-</span><span class="">  130: 	}
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  131: 	return @errors;
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  132: }
-</span><span class="">  133: 
-</span><span class="">  134: # Purpose:    Return a coderef that rewrites a module file with a POD skeleton.
-</span><span class="">  135: # Entry:      $ctx is the Context; $rel_path is the module path relative to root.
-</span><span class="">  136: # Exit:       Coderef ($ctx) -&gt; void; rewrites the module file with POD appended.
-</span><span class="">  137: # Side effects: Modifies the module file on disk when the coderef is called.
-</span><span class="">  138: sub _fix_scaffold_pod {
-</span><span class="">  139: 	my ($ctx, $rel_path) = @_;
-</span><span class="">  140: 	# Return the fix as a closure so it runs only when the user accepts it.
-</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  141: 	return sub {
-</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  142: 		# Protect caller&#39;s $@ from autodie&#39;s internal eval inside open().
-</span><span class="">  143: 		local $@;
-</span><span class="">  144: 		my $abs = $ctx-&gt;abs_path($rel_path);
-</span><span class="">  145: 		# Convert the relative file path to a Perl package name.
-</span><span class="">  146: 		# e.g. lib/My/Module.pm -&gt; My::Module
-</span><span class="">  147: 		(my $pkg = $rel_path) =~ s{^lib/}{}; $pkg =~ s{/}{::}g; $pkg =~ s{\.pm$}{};
-</span><span class="">  148: 
-</span><span class="">  149: 		# Read the existing file so we can rewrite it (not just append).
-</span><span class="">  150: 		open my $rfh, &#39;&lt;&#39;, $abs;
-</span><span class="">  151: 		my $content = do { local $/; &lt;$rfh&gt; };
-</span><span class="">  152: 		close $rfh;
-</span><span class="">  153: 
-</span><span class="">  154: 		# Remove any trailing `1;` so the rewritten file has exactly one.
-</span><span class="">  155: 		# Without this, the original `1;` and the skeleton&#39;s `1;` would both appear.
-</span><span class="">  156: 		$content =~ s/\s*\n?1;\s*\z//s;
-</span><span class="">  157: 
-</span><span class="">  158: 		# Write the existing content back followed by the POD skeleton.
-</span><span class="">  159: 		open my $wfh, &#39;&gt;&#39;, $abs;
-</span><span class="">  160: 		print {$wfh} $content, &lt;&lt;&quot;END_POD&quot;;
-</span><span class="">  161: 
-</span><span class="">  162: 1;
-</span><span class="">  163: 
-</span><span class="">  164: __END__
-</span><span class="">  165: 
-</span><span class="">  166: =head1 NAME
-</span><span class="">  167: 
-</span><span class="">  168: $pkg - (description goes here)
-</span><span class="">  169: 
-</span><span class="">  170: =head1 SYNOPSIS
-</span><span class="">  171: 
-</span><span class="">  172:   use $pkg;
-</span><span class="">  173: 
-</span><span class="">  174: =head1 DESCRIPTION
-</span><span class="">  175: 
-</span><span class="">  176: (description goes here)
-</span><span class="">  177: 
-</span><span class="">  178: =head1 AUTHOR
-</span><span class="">  179: 
-</span><span class="">  180: Nigel Horne C&lt;&lt; &lt;njh\@nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  181: 
-</span><span class="">  182: =head1 LICENSE
-</span><span class="">  183: 
-</span><span class="">  184: Copyright (C) 2026 Nigel Horne.
-</span><span class="">  185: This library is free software; you can redistribute it and/or modify
-</span><span class="">  186: it under the same terms as Perl itself.
-</span><span class="">  187: 
-</span><span class="">  188: =cut
-</span><span class="">  189: END_POD
-</span><span class="">  190: 		close $wfh;
-</span><span class="">  191: 	};
-</span><span class="">  192: }
-</span><span class="">  193: 
-</span><span class="">  194: 1;
-</span><span class="">  195: 
-</span><span class="">  196: __END__
-</span><span class="">  197: 
-</span><span class="">  198: =head1 NAME
-</span><span class="">  199: 
-</span><span class="">  200: App::Project::Doctor::Check::Pod - Check POD presence and validity in all modules
-</span><span class="">  201: 
-</span><span class="">  202: =head1 DESCRIPTION
-</span><span class="">  203: 
-</span><span class="">  204: Uses L&lt;Pod::Checker&gt; to validate every C&lt;.pm&gt; under C&lt;lib/&gt;.  Modules with no
-</span><span class="">  205: POD at all get a fixable finding that appends a minimal skeleton.
+</span><span class="">  109: 	# The :encoding(UTF-8) layer is required: Pod::Checker honours =encoding utf8
+</span><span class="">  110: 	# directives and emits wide characters; without the layer Perl raises
+</span><span class="">  111: 	# &quot;Wide character in print&quot; before we ever see the error text.
+</span><span class="">  112: 	my $captured = &#39;&#39;;
+</span><span class="">  113: 	open my $out_fh, &#39;&gt;:encoding(UTF-8)&#39;, \$captured;
+</span><span class="">  114: 	my $checker = Pod::Checker-&gt;new;
+</span><span class="">  115: 	$checker-&gt;parse_from_file($abs_path, $out_fh);
+</span><span class="">  116: 	close $out_fh;
+</span><span class="">  117: 
+</span><span class="">  118: 	# If Pod::Checker reported no errors, return an empty list immediately.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  119: 	return () if ($checker-&gt;num_errors // 0) == 0;
+</span><p> <b> Mutants (Total: 1, Killed: 1, Survived: 0)</b><p><span class="">  120: 
+</span><span class="">  121: 	# Parse the captured text output to extract individual error messages.
+</span><span class="">  122: 	my @errors;
+</span><span class="">  123: 	for my $line (split /\n/, $captured) {
+</span><span class="">  124: 		# Skip blank lines in the checker output.
+</span><span class="">  125: 		next unless $line =~ /\S/;
+</span><span class="">  126: 		# Try to extract the line number from the Pod::Checker message.
+</span><span class="">  127: 		my ($lineno) = $line =~ /line\s+(\d+)/i;
+</span><span class="">  128: 		push @errors, {
+</span><span class="">  129: 			message =&gt; $line,
+</span><span class="">  130: 			# Only include &#39;line&#39; in the hashref when we actually found one.
+</span><span class="">  131: 			defined $lineno ? (line =&gt; $lineno) : (),
+</span><span class="">  132: 		};
+</span><span class="">  133: 	}
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  134: 	return @errors;
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  135: }
+</span><span class="">  136: 
+</span><span class="">  137: # Purpose:    Return a coderef that rewrites a module file with a POD skeleton.
+</span><span class="">  138: # Entry:      $ctx is the Context; $rel_path is the module path relative to root.
+</span><span class="">  139: # Exit:       Coderef ($ctx) -&gt; void; rewrites the module file with POD appended.
+</span><span class="">  140: # Side effects: Modifies the module file on disk when the coderef is called.
+</span><span class="">  141: sub _fix_scaffold_pod {
+</span><span class="">  142: 	my ($ctx, $rel_path) = @_;
+</span><span class="">  143: 	# Return the fix as a closure so it runs only when the user accepts it.
+</span><span class="killed tooltip" data-tooltip="Mutations here were killed. Tests are effectively covering this logic.">  144: 	return sub {
+</span><p> <b> Mutants (Total: 2, Killed: 2, Survived: 0)</b><p><span class="">  145: 		# Protect caller&#39;s $@ from autodie&#39;s internal eval inside open().
+</span><span class="">  146: 		local $@;
+</span><span class="">  147: 		my $abs = $ctx-&gt;abs_path($rel_path);
+</span><span class="">  148: 		# Convert the relative file path to a Perl package name.
+</span><span class="">  149: 		# e.g. lib/My/Module.pm -&gt; My::Module
+</span><span class="">  150: 		(my $pkg = $rel_path) =~ s{^lib/}{}; $pkg =~ s{/}{::}g; $pkg =~ s{\.pm$}{};
+</span><span class="">  151: 
+</span><span class="">  152: 		# Read the existing file so we can rewrite it (not just append).
+</span><span class="">  153: 		# UTF-8 encoding layer matches what Pod::Checker expects and preserves
+</span><span class="">  154: 		# any non-ASCII source characters correctly on the round-trip.
+</span><span class="">  155: 		open my $rfh, &#39;&lt;:encoding(UTF-8)&#39;, $abs;
+</span><span class="">  156: 		my $content = do { local $/; &lt;$rfh&gt; };
+</span><span class="">  157: 		close $rfh;
+</span><span class="">  158: 
+</span><span class="">  159: 		# Remove any trailing `1;` so the rewritten file has exactly one.
+</span><span class="">  160: 		# Without this, the original `1;` and the skeleton&#39;s `1;` would both appear.
+</span><span class="">  161: 		$content =~ s/\s*\n?1;\s*\z//s;
+</span><span class="">  162: 
+</span><span class="">  163: 		# Write the existing content back followed by the POD skeleton.
+</span><span class="">  164: 		open my $wfh, &#39;&gt;:encoding(UTF-8)&#39;, $abs;
+</span><span class="">  165: 		print {$wfh} $content, &lt;&lt;&quot;END_POD&quot;;
+</span><span class="">  166: 
+</span><span class="">  167: 1;
+</span><span class="">  168: 
+</span><span class="">  169: __END__
+</span><span class="">  170: 
+</span><span class="">  171: =head1 NAME
+</span><span class="">  172: 
+</span><span class="">  173: $pkg - (description goes here)
+</span><span class="">  174: 
+</span><span class="">  175: =head1 SYNOPSIS
+</span><span class="">  176: 
+</span><span class="">  177:   use $pkg;
+</span><span class="">  178: 
+</span><span class="">  179: =head1 DESCRIPTION
+</span><span class="">  180: 
+</span><span class="">  181: (description goes here)
+</span><span class="">  182: 
+</span><span class="">  183: =head1 AUTHOR
+</span><span class="">  184: 
+</span><span class="">  185: Nigel Horne C&lt;&lt; &lt;njh\@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  186: 
+</span><span class="">  187: =head1 LICENSE
+</span><span class="">  188: 
+</span><span class="">  189: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  190: This library is free software; you can redistribute it and/or modify
+</span><span class="">  191: it under the same terms as Perl itself.
+</span><span class="">  192: 
+</span><span class="">  193: =cut
+</span><span class="">  194: END_POD
+</span><span class="">  195: 		close $wfh;
+</span><span class="">  196: 	};
+</span><span class="">  197: }
+</span><span class="">  198: 
+</span><span class="">  199: 1;
+</span><span class="">  200: 
+</span><span class="">  201: __END__
+</span><span class="">  202: 
+</span><span class="">  203: =head1 NAME
+</span><span class="">  204: 
+</span><span class="">  205: App::Project::Doctor::Check::Pod - Check POD presence and validity in all modules
 </span><span class="">  206: 
-</span><span class="">  207: =head3 MESSAGES
+</span><span class="">  207: =head1 DESCRIPTION
 </span><span class="">  208: 
-</span><span class="">  209:   Code | Trigger                  | Resolution
-</span><span class="">  210:   -----|--------------------------|-----------------------------------------------
-</span><span class="">  211:   P001 | No POD in a .pm file     | Fix appends a skeleton; fill in by hand
-</span><span class="">  212:   P002 | Pod::Checker error       | Correct the malformed POD
+</span><span class="">  209: Uses L&lt;Pod::Checker&gt; to validate every C&lt;.pm&gt; under C&lt;lib/&gt;.  Modules with no
+</span><span class="">  210: POD at all get a fixable finding that appends a minimal skeleton.
+</span><span class="">  211: 
+</span><span class="">  212: =head3 MESSAGES
 </span><span class="">  213: 
-</span><span class="">  214: =head3 FORMAL SPECIFICATION
-</span><span class="">  215: 
-</span><span class="">  216:   check : Context -&gt; [Finding]
-</span><span class="">  217:   check ctx ==
-</span><span class="">  218:     concat [ check_one m | m &lt;- lib_modules ctx ]
-</span><span class="">  219:     where check_one m ==
-</span><span class="">  220:             (if no_pod m then [error+fix] else [])
-</span><span class="">  221:             ++ pod_errors m
-</span><span class="">  222: 
-</span><span class="">  223: =head1 AUTHOR
-</span><span class="">  224: 
-</span><span class="">  225: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
-</span><span class="">  226: 
-</span><span class="">  227: =head1 LICENSE
-</span><span class="">  228: 
-</span><span class="">  229: Copyright (C) 2026 Nigel Horne.
-</span><span class="">  230: This library is free software; you can redistribute it and/or modify
-</span><span class="">  231: it under the same terms as Perl itself.
-</span><span class="">  232: 
-</span><span class="">  233: =cut
+</span><span class="">  214:   Code | Trigger                  | Resolution
+</span><span class="">  215:   -----|--------------------------|-----------------------------------------------
+</span><span class="">  216:   P001 | No POD in a .pm file     | Fix appends a skeleton; fill in by hand
+</span><span class="">  217:   P002 | Pod::Checker error       | Correct the malformed POD
+</span><span class="">  218: 
+</span><span class="">  219: =head3 FORMAL SPECIFICATION
+</span><span class="">  220: 
+</span><span class="">  221:   check : Context -&gt; [Finding]
+</span><span class="">  222:   check ctx ==
+</span><span class="">  223:     concat [ check_one m | m &lt;- lib_modules ctx ]
+</span><span class="">  224:     where check_one m ==
+</span><span class="">  225:             (if no_pod m then [error+fix] else [])
+</span><span class="">  226:             ++ pod_errors m
+</span><span class="">  227: 
+</span><span class="">  228: =head1 AUTHOR
+</span><span class="">  229: 
+</span><span class="">  230: Nigel Horne C&lt;&lt; &lt;njh@nigelhorne.com&gt; &gt;&gt;
+</span><span class="">  231: 
+</span><span class="">  232: =head1 LICENSE
+</span><span class="">  233: 
+</span><span class="">  234: Copyright (C) 2026 Nigel Horne.
+</span><span class="">  235: This library is free software; you can redistribute it and/or modify
+</span><span class="">  236: it under the same terms as Perl itself.
+</span><span class="">  237: 
+</span><span class="">  238: =cut
 </span></pre>
 
 <script>
