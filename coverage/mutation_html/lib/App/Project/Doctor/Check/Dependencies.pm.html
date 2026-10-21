@@ -480,7 +480,7 @@ Approximate LCSAJ segments: 29<br>
 </span><span class="">  188: 	for my $line (split /\n/, $text) {
 </span><span class="">  189: 		$mods{$1} = 1 if $line =~ /^\s*requires\s+[&#39;&quot;]?([\w:]+)[&#39;&quot;]?/;
 </span><span class="">  190: 	}
-</span><span class="survived-2 tooltip" data-tooltip="Boolean logic mutation survived. Add tests covering both true and false paths. Return value mutation survived. Add tests asserting exact return values.">  191: 	return \%mods;
+</span><span class="survived-2 tooltip" data-tooltip="Return value mutation survived. Add tests asserting exact return values. Boolean logic mutation survived. Add tests covering both true and false paths.">  191: 	return \%mods;
 </span>
 					<details class="mutant-details">
 					<summary>Mutants (Total: 2, Killed: 0, Survived: 2)</summary>
